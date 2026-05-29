@@ -166,6 +166,10 @@
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.25s ease, background-color 0.25s ease;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .admin-primary-button {
@@ -256,6 +260,57 @@
   .admin-simple-hero-content,
   .admin-content-panel {
     border-radius: 22px;
+  }
+
+  .admin-simple-hero-content {
+    padding: 1.5rem;
+  }
+
+  .admin-simple-hero-content h1 {
+    font-size: 1.6rem;
+  }
+
+  .admin-simple-hero-content p {
+    font-size: 0.95rem;
+  }
+
+  .admin-content-header {
+    padding: 1rem 1rem 0;
+  }
+
+  .admin-content-body {
+    padding: 1rem;
+  }
+
+  .admin-form-field input {
+    padding: 0.75rem 0.8rem;
+  }
+
+  .admin-preview-box {
+    width: 100%;
+    max-height: 200px;
+  }
+
+  .admin-users-editing {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-order-card {
+    padding: 0.8rem;
+  }
+
+  .admin-order-meta {
+    flex-direction: column;
+  }
+
+  .admin-orders-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-primary-button,
+  .admin-secondary-button {
+    padding: 0.75rem 1.2rem;
+    min-height: 44px;
   }
 }
 

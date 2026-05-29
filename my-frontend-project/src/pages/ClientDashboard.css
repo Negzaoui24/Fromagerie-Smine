@@ -89,6 +89,10 @@
   background: #f9c74f;
   color: #24160b;
   transition: transform 0.25s ease, background-color 0.25s ease;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .client-btn:hover {
@@ -200,6 +204,7 @@
 .client-modal-image {
   display: block;
   width: 100%;
+  height: auto;
   object-fit: cover;
   background: linear-gradient(135deg, #f7e7ce, #edd4a6);
 }
@@ -323,5 +328,71 @@
 
   .client-product-meta {
     flex-direction: column;
+  }
+
+  .client-section {
+    padding: 2.5rem 1rem 0;
+  }
+
+  .client-hero-content h1 {
+    font-size: 1.8rem;
+  }
+
+  .client-section-head h2 {
+    font-size: 1.5rem;
+  }
+
+  .client-category-card,
+  .client-product-card {
+    border-radius: 20px;
+  }
+
+  .client-category-body,
+  .client-product-body {
+    padding: 1rem;
+  }
+
+  .client-category-body h3,
+  .client-product-meta h3 {
+    font-size: 1.3rem;
+  }
+
+  .client-btn {
+    padding: 0.75rem 1.2rem;
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  .client-hero-actions {
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .client-filter-bar {
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .client-filter-pill {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .client-modal {
+    padding: 1.2rem;
+    border-radius: 20px;
+  }
+
+  .client-modal-close {
+    width: 36px;
+    height: 36px;
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .client-alert,
+  .client-empty-state {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
   }
 }
