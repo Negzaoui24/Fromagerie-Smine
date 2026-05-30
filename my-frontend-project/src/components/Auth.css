@@ -16,6 +16,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at top left, rgba(241, 194, 125, 0.55), transparent 28%),
     radial-gradient(circle at bottom right, rgba(184, 92, 56, 0.18), transparent 30%),
@@ -260,26 +261,33 @@
   }
 
   .auth-card {
+    width: min(100%, 640px);
+    margin: 16px auto;
     grid-template-columns: 1fr;
-    border-radius: 20px;
+    border-radius: 16px;
   }
 
   .auth-hero,
   .auth-panel {
-    padding: 24px 16px;
+    padding: 24px;
   }
 
   .auth-hero h1 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     margin: 16px 0 10px;
   }
 
   .auth-hero p {
     font-size: 0.95rem;
+    max-width: 100%;
   }
 
-  .auth-feature-list li {
-    font-size: 0.9rem;
+  .auth-feature-list {
+    display: none;
+  }
+
+  .auth-form {
+    gap: 16px;
   }
 
   .auth-form-header h2 {
@@ -287,7 +295,7 @@
   }
 
   .auth-field input {
-    padding: 12px 14px;
+    padding: 14px 16px;
     font-size: 1rem;
   }
 
@@ -296,12 +304,13 @@
   }
 
   .auth-submit {
-    padding: 12px 16px;
+    padding: 14px 16px;
+    min-height: 48px;
     font-size: 0.95rem;
   }
 
   .auth-secondary-button {
-    min-height: 44px;
+    min-height: 48px;
     font-size: 0.95rem;
   }
 
@@ -312,5 +321,38 @@
 
   .auth-switch {
     font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    width: min(100%, 420px);
+    margin: 16px auto;
+    border-radius: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  .auth-hero {
+    display: none;
+  }
+
+  .auth-panel {
+    padding: 24px;
+  }
+
+  .auth-hero h1 {
+    font-size: 1.4rem;
+  }
+
+  .auth-form-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .auth-field input {
+    padding: 14px 16px;
+  }
+
+  .auth-submit {
+    min-height: 48px;
   }
 }

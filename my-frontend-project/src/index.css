@@ -1,5 +1,9 @@
+html,
 body {
   margin: 0;
+  padding: 0;
+  max-width: 100%;
+  overflow-x: hidden;
   font-family: "Segoe UI", "Trebuchet MS", "Helvetica Neue", sans-serif;
   background: #f7f1e8;
   color: #24160b;
@@ -13,6 +17,7 @@ body {
 
 #root {
   min-height: 100vh;
+  width: 100%;
 }
 
 code {

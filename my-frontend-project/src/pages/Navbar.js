@@ -40,7 +40,6 @@ function Navbar({ space }) {
   const location = useLocation();
   const name = localStorage.getItem("name");
   const token = localStorage.getItem("token");
-  const userRole = localStorage.getItem("role");
   const [menuOpen, setMenuOpen] = useState(false);
   const whatsappUrl = "https://wa.me/21620344677";
 
@@ -55,12 +54,6 @@ function Navbar({ space }) {
   const isGrosSpace = currentSpace === "gros";
   const isClientSpace = currentSpace === "client";
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("name");
-    navigate("/login");
-  };
-
   const handleMenuClick = (callback) => {
     callback();
     setMenuOpen(false);
@@ -69,6 +62,14 @@ function Navbar({ space }) {
   const openExternalLink = (url) => {
     window.open(url, "_blank", "noopener,noreferrer");
     setMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("name");
+    localStorage.removeItem("email");
+    localStorage.removeItem("role");
+    navigate("/login");
   };
 
   const brandTarget = isAdminSpace
@@ -80,10 +81,7 @@ function Navbar({ space }) {
   const showGrosLinkInClientMenu = isClientSpace && location.pathname !== "/client/home";
   const showClientDashboardLink = isClientSpace && location.pathname !== "/client/home";
   const links = isAdminSpace
-    ? [
-        { label: "Gestion Admin", to: "/admin/dashboard" },
-        { label: "Espace Client", to: "/client/dashboard" }
-      ]
+    ? []
     : isGrosSpace
       ? [
           { label: "Catalogue", sectionId: "products", sectionPath: "/gros" },
@@ -209,17 +207,7 @@ function Navbar({ space }) {
               ? "Vente en gros - Connexion clients"
               : "Bienvenue a Fromagerie Smine"}
         </span>
-        {isClientSpace && (userRole === "admin" || userRole === "super_admin") && (
-          <button
-            type="button"
-            className="navbar-space-link"
-            onClick={() => navigate("/admin/dashboard")}
-          >
-            Admin Dashboard
-          </button>
-        )}
-
-        {(isGrosSpace || (isClientSpace && location.pathname !== "/client/home")) && !token && (
+        {!token && (
           <button
             type="button"
             className="navbar-space-link navbar-space-link-secondary"
@@ -250,8 +238,9 @@ function Navbar({ space }) {
           onClick={() => setMenuOpen(!menuOpen)}
           type="button"
           aria-label="Ouvrir le menu"
+          aria-expanded={menuOpen}
         >
-          Menu
+          <span className="hamburger-icon">{menuOpen ? "✕" : "☰"}</span>
         </button>
 
         {menuOpen && (
@@ -279,13 +268,22 @@ function Navbar({ space }) {
               </button>
             ))}
             {token ? (
-              <button
-                className="nav-link logout-link"
-                onClick={() => handleMenuClick(handleLogout)}
-                type="button"
-              >
-                Logout
-              </button>
+              <>
+                <button
+                  className="nav-link"
+                  onClick={() => handleMenuClick(() => navigate("/profile"))}
+                  type="button"
+                >
+                  Modifier mes données
+                </button>
+                <button
+                  className="nav-link logout-link"
+                  onClick={() => handleMenuClick(handleLogout)}
+                  type="button"
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <div className="navbar-dropdown-logins">
                 {(isClientSpace || isGrosSpace) && (

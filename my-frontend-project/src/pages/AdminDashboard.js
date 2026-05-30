@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import CategoryManager from "./CategoryManager";
@@ -91,6 +91,7 @@ function AdminDashboard() {
   const [usersError, setUsersError] = useState("");
   const [userFeedback, setUserFeedback] = useState({ text: "", type: "" });
   const [editingUserId, setEditingUserId] = useState(null);
+  const [showAdminForm, setShowAdminForm] = useState(false);
   const [editUserForm, setEditUserForm] = useState({
     username: "",
     email: "",
@@ -103,6 +104,16 @@ function AdminDashboard() {
   const [selectedCommercialId, setSelectedCommercialId] = useState("");
   const [commercials, setCommercials] = useState([]);
   const [commercialsLoading, setCommercialsLoading] = useState(false);
+
+  // Ref pour scroller vers la section du contenu
+  const contentPanelRef = useRef(null);
+
+  // Scroll automatique vers le formulaire quand activePanel change
+  useEffect(() => {
+    if (contentPanelRef.current) {
+      contentPanelRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activePanel]);
 
   const activeConfig = useMemo(
     () => visiblePanels.find((panel) => panel.id === activePanel),
@@ -268,7 +279,7 @@ function AdminDashboard() {
   }, [canViewOrders, isCommercialUser]);
 
   useEffect(() => {
-    if (activePanel === "users") {
+    if (activePanel === "users" || activePanel === "admin") {
       fetchUsers();
     }
   }, [activePanel, fetchUsers]);
@@ -423,8 +434,40 @@ function AdminDashboard() {
 
       return (
         <div className="admin-simple-card">
-          <form className="admin-form-grid" onSubmit={handleCreateAdmin}>
-            <label className="admin-form-field">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3>Administrateurs existants</h3>
+            {!showAdminForm ? (
+              <button type="button" className="admin-primary-button" onClick={() => setShowAdminForm(true)}>Cr�er un nouvel admin</button>
+            ) : (
+              <div>
+                <button type="button" className="admin-secondary-button" onClick={() => setShowAdminForm(false)}>Masquer le formulaire</button>
+              </div>
+            )}
+          </div>
+
+          {users && users.filter(u => u.role === 'admin' || u.role === 'super_admin').length === 0 ? (
+            <p>Aucun administrateur trouv�.</p>
+          ) : (
+            <div className="admin-users-table" style={{ marginBottom: 16 }}>
+              {users.filter(u => u.role === 'admin' || u.role === 'super_admin').map(u => (
+                <div key={u._id} className="admin-users-row">
+                  <div className="admin-users-info">
+                    <strong>{u.username}</strong>
+                    <span>{u.email}</span>
+                    <span className="admin-users-role">{u.role}</span>
+                  </div>
+                  <div className="admin-users-actions">
+                    <button type="button" onClick={() => startEditingUser(u)}>Modifier</button>
+                    <button type="button" onClick={() => handleDeleteUser(u._id)}>Supprimer</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showAdminForm && (
+            <form className="admin-form-grid" onSubmit={handleCreateAdmin}>
+              <label className="admin-form-field">
               <span>Nom d'utilisateur</span>
               <input
                 type="text"
@@ -505,7 +548,8 @@ function AdminDashboard() {
             <button className="admin-primary-button" type="submit" disabled={isSubmittingAdmin}>
               {isSubmittingAdmin ? "Creation..." : "Creer le nouvel admin"}
             </button>
-          </form>
+            </form>
+          )}
 
           {adminMessage.text && (
             <p className={`admin-feedback admin-feedback-${adminMessage.type}`}>
@@ -817,7 +861,7 @@ function AdminDashboard() {
             ))}
           </div>
 
-          <section className="admin-content-panel">
+          <section className="admin-content-panel" ref={contentPanelRef}>
             <div className="admin-content-header">
               <h2>{activeConfig?.title || "Actions disponibles"}</h2>
               <p>

@@ -296,4 +296,146 @@ router.get("/me", authMiddleware, (req, res) => {
 router.get("/home", authMiddleware, (req, res) => {
   res.json({ msg: `Bienvenue ${req.user.name}! sur la page Home.` });
 });
+
+// @route GET api/users/profile/me
+// @desc Get current user profile
+// @access Private
+router.get("/profile/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ status: "notok", msg: "Utilisateur non trouvé." });
+    }
+    res.status(200).json({ status: "ok", user });
+  } catch (err) {
+    console.error("Erreur recuperation profil:", err);
+    res.status(500).json({ status: "error", msg: "Erreur serveur." });
+  }
+});
+
+// @route PUT api/users/profile/update
+// @desc Update current user profile
+// @access Private
+router.put("/profile/update", authMiddleware, async (req, res) => {
+  try {
+    const { username, email, phone, address, currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ status: "notok", msg: "Utilisateur non trouvé." });
+    }
+
+    // Si l'utilisateur veut changer son mot de passe, vérifier l'ancien
+    if (newPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ status: "notok", msg: "Mot de passe actuel requis." });
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ status: "notok", msg: "Mot de passe actuel incorrect." });
+      }
+
+      // Hash le nouveau mot de passe
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+    }
+
+    // Mettre à jour les autres champs
+    if (username) user.username = username;
+    if (email) user.email = email;
+    if (phone !== undefined) user.phone = phone;
+    if (address !== undefined) user.address = address;
+
+    await user.save();
+    const updatedUser = await User.findById(user._id).select("-password");
+
+    res.status(200).json({ status: "ok", msg: "Profil mis à jour avec succès.", user: updatedUser });
+  } catch (err) {
+    console.error("Erreur mise à jour profil:", err);
+    res.status(500).json({ status: "error", msg: "Erreur serveur." });
+  }
+});
+
+// @route POST api/users/forgot-password
+// @desc Request password reset
+// @access Public
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ status: "notok", msg: "Email requis." });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Ne pas révéler si l'email existe ou non pour des raisons de sécurité
+      return res.status(200).json({ status: "ok", msg: "Si cet email existe, vous recevrez un lien de réinitialisation." });
+    }
+
+    // Générer un token de réinitialisation (valid 1 heure)
+    const resetToken = jwt.sign({ id: user._id, type: "reset" }, JWT_SECRET, { expiresIn: "1h" });
+
+    // Dans une vrai app, envoyer un email avec le lien
+    // Pour dev, on va juste retourner le token
+    res.status(200).json({
+      status: "ok",
+      msg: "Si cet email existe, vous recevrez un lien de réinitialisation.",
+      token: process.env.NODE_ENV === "development" ? resetToken : undefined
+    });
+  } catch (err) {
+    console.error("Erreur forgot-password:", err);
+    res.status(500).json({ status: "error", msg: "Erreur serveur." });
+  }
+});
+
+// @route POST api/users/reset-password
+// @desc Reset password with token
+// @access Public
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword, confirmPassword } = req.body;
+
+    if (!token || !newPassword || !confirmPassword) {
+      return res.status(400).json({ status: "notok", msg: "Tous les champs sont requis." });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ status: "notok", msg: "Les mots de passe ne correspondent pas." });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ status: "notok", msg: "Le mot de passe doit contenir au moins 6 caractères." });
+    }
+
+    // Vérifier le token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(400).json({ status: "notok", msg: "Token invalide ou expiré." });
+    }
+
+    if (decoded.type !== "reset") {
+      return res.status(400).json({ status: "notok", msg: "Token invalide." });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ status: "notok", msg: "Utilisateur non trouvé." });
+    }
+
+    // Hash le nouveau mot de passe
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({ status: "ok", msg: "Mot de passe réinitialisé avec succès." });
+  } catch (err) {
+    console.error("Erreur reset-password:", err);
+    res.status(500).json({ status: "error", msg: "Erreur serveur." });
+  }
+});
+
 module.exports = router;
