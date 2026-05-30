@@ -27,6 +27,11 @@ app.use(
   })
 );
 
+// Route principale de vérification de l'API
+app.get("/", (req, res) => {
+  res.status(200).json({ status: "ok", message: "API Express fonctionne correctement" });
+});
+
 // Servir les fichiers statiques (images) uniquement en local (Vercel: FS éphémère)
 if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
   app.use("/uploads", express.static(path.join(__dirname, "uploads")));
