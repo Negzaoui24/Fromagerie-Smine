@@ -53,6 +53,7 @@ function Navbar({ space }) {
   const isAdminSpace = currentSpace === "admin";
   const isGrosSpace = currentSpace === "gros";
   const isClientSpace = currentSpace === "client";
+  const isAuthenticated = Boolean(token);
 
   const handleMenuClick = (callback) => {
     callback();
@@ -88,9 +89,15 @@ function Navbar({ space }) {
           { label: "Panier", sectionId: "cart", sectionPath: "/gros" }
         ]
       : [
-          ...(showClientDashboardLink ? [{ label: "Espace Client", to: "/client/dashboard" }] : []),
           { label: "Contactez-nous", sectionId: "contact", sectionPath: "/client/home" },
-          ...(showGrosLinkInClientMenu ? [{ label: "Vente en gros", to: "/gros" }] : [])
+          ...(
+            isAuthenticated
+              ? [
+                  ...(showClientDashboardLink ? [{ label: "Espace Client", to: "/client/dashboard" }] : []),
+                  ...(showGrosLinkInClientMenu ? [{ label: "Vente en gros", to: "/gros" }] : [])
+                ]
+              : []
+          )
         ];
   const socialLinks =
     isClientSpace || isGrosSpace
