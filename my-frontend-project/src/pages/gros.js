@@ -1,22 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { buildApiUrl } from "../config/api";
+import api from "../api";
 import { resolveMediaUrl } from "../config/media";
 import "./gros.css";
 
 const categoryAccents = ["gold", "cream", "copper"];
-
-const parseApiResponse = async (response) => {
-  const text = await response.text();
-  if (!text) {
-    return {};
-  }
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { text };
-  }
-};
 
 function GrosPage() {
   const navigate = useNavigate();
@@ -128,13 +116,7 @@ function GrosPage() {
 
   const fetchCommercialOptions = useCallback(async () => {
     try {
-      const response = await fetch(buildApiUrl("/users/commercials"));
-      const data = await parseApiResponse(response);
-
-      if (!response.ok) {
-        throw new Error(data?.msg || data?.message || data?.text || "Impossible de charger les commerciaux.");
-      }
-
+      const { data } = await api.get("/users/commercials");
       setCommercialOptions(Array.isArray(data.commercials) ? data.commercials : []);
     } catch (err) {
       console.error("Erreur chargement commerciaux:", err);
@@ -158,17 +140,7 @@ function GrosPage() {
     setOrdersError("");
 
     try {
-      const response = await fetch(buildApiUrl("/orders/client"), {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      const data = await parseApiResponse(response);
-
-      if (!response.ok) {
-        throw new Error(data?.msg || data?.message || data?.text || "Impossible de charger les commandes.");
-      }
-
+      const { data } = await api.get("/orders/client");
       setOrders(Array.isArray(data.orders) ? data.orders : []);
     } catch (err) {
       setOrdersError(err.message || "Impossible de charger les commandes.");
@@ -265,33 +237,20 @@ function GrosPage() {
     setCartMessage("Envoi de votre commande...");  
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(buildApiUrl("/orders/client"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          customerName: wholesaleCustomer.nom.trim(),
-          customerEmail: wholesaleCustomer.email.trim(),
-          customerPhone: wholesaleCustomer.phone.trim(),
-          customerLocation: wholesaleCustomer.localisation.trim(),
-          commercialId: selectedCommercialId,
-          items: cartItems.map((item) => ({
-            productId: item.productId,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            unit: item.unit
-          }))
-        })
+      await api.post("/orders/client", {
+        customerName: wholesaleCustomer.nom.trim(),
+        customerEmail: wholesaleCustomer.email.trim(),
+        customerPhone: wholesaleCustomer.phone.trim(),
+        customerLocation: wholesaleCustomer.localisation.trim(),
+        commercialId: selectedCommercialId,
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          unit: item.unit
+        }))
       });
-
-      const data = await parseApiResponse(response);
-      if (!response.ok) {
-        throw new Error(data?.msg || data?.message || data?.text || "Impossible d'enregistrer la commande.");
-      }
 
       setCartMessageType("success");
       setCartMessage("Votre demande a été enregistrée.");
@@ -321,15 +280,12 @@ function GrosPage() {
 
       try {
         const [categoriesRes, productsRes] = await Promise.all([
-          fetch(buildApiUrl("/categories")),
-          fetch(buildApiUrl("/produits"))
+          api.get("/categories"),
+          api.get("/produits")
         ]);
 
-        const categoriesData = await categoriesRes.json();
-        const productsData = await productsRes.json();
-
-        setCategories(Array.isArray(categoriesData.categories) ? categoriesData.categories : []);
-        setProducts(Array.isArray(productsData.produits) ? productsData.produits : []);
+        setCategories(Array.isArray(categoriesRes.data.categories) ? categoriesRes.data.categories : []);
+        setProducts(Array.isArray(productsRes.data.produits) ? productsRes.data.produits : []);
       } catch (err) {
         console.error("Erreur chargement catalogue commercial:", err);
         setError("Impossible de charger le catalogue commercial pour le moment.");
@@ -795,3 +751,5 @@ function GrosPage() {
 }
 
 export default GrosPage;
+
+

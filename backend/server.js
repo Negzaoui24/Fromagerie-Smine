@@ -17,12 +17,22 @@ let isMongoConnected = false;
 // Pour analyser le corps des requêtes HTTP (JSON)
 app.use(express.json());
 
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+  "http://127.0.0.1:3002"
+];
+if (process.env.CLIENT_URL && !allowedOrigins.includes(process.env.CLIENT_URL)) {
+  allowedOrigins.push(process.env.CLIENT_URL);
+}
 
 // Autoriser le partage de ressources (CORS) avec envoi de cookies
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: allowedOrigins,
     credentials: true
   })
 );
@@ -38,7 +48,7 @@ if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
 }
 
 // Connexion à MongoDB
-const mongo_url = process.env.MONGO_URL || process.env.MONGODB_URI || config.get("mongo_url");
+const mongo_url = process.env.MONGO_URL || process.env.MONGODB_URI || (config.has && config.has("mongo_url") ? config.get("mongo_url") : "mongodb://localhost:27017/fromagerie_db");
 mongoose.set("strictQuery", true);
 
 const connectToDatabase = async () => {

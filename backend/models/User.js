@@ -26,6 +26,15 @@ const UserSchema = new mongoose.Schema(
     address: {
       type: String,
       default: ""
+    },
+    fiscalId: {
+      type: String,
+      default: ""
+    },
+    accountStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending"
     }
   },
   { timestamps: true }

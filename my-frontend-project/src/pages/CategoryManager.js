@@ -21,7 +21,7 @@ import {
   useTheme
 } from "@mui/material";
 import { Delete, AddPhotoAlternate } from "@mui/icons-material";
-import { buildApiUrl } from "../config/api";
+import api, { buildApiUrl } from "../api";
 import { resolveMediaUrl } from "../config/media";
 
 const API_URL = buildApiUrl("/categories");
@@ -40,8 +40,7 @@ const CategoryManager = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_URL);
-      const data = await res.json();
+      const { data } = await api.get(API_URL);
       if (data.status === "ok" && Array.isArray(data.categories)) {
         setCategories(data.categories);
       } else {
@@ -90,12 +89,11 @@ const CategoryManager = () => {
 
       console.log(`[CategoryManager] Envoi ${method} vers ${url}`);
       
-      const res = await fetch(url, {
-        method: method,
-        body: formData,
-      });
+      const response = editMode
+        ? await api.put(url, formData)
+        : await api.post(url, formData);
       
-      const data = await res.json();
+      const data = response.data;
       console.log("[CategoryManager] Réponse serveur:", data);
 
       if (data.status === "ok") {
@@ -135,8 +133,7 @@ const CategoryManager = () => {
     }
 
     try {
-      const res = await fetch(`${API_URL}/delete/${id}`, { method: "DELETE" });
-      const data = await res.json();
+      const { data } = await api.delete(`${API_URL}/delete/${id}`);
 
       if (data.status === "ok") {
         setMessage({ text: "Categorie supprimee avec succes", type: "success" });

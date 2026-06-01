@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import "./Auth.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import axios from "axios";
-import { buildApiUrl } from "../config/api";
+import api, { buildApiUrl } from "../api";
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: "", password: "" });
@@ -66,7 +65,7 @@ const Login = () => {
         setMessage("");
 
         try {
-            const res = await axios.post(buildApiUrl("/users/login"), formData, { withCredentials: true });
+            const res = await api.post(buildApiUrl("/users/login"), formData, { withCredentials: true });
             const roleRaw = res.data.role || "";
             const role = String(roleRaw).toLowerCase().trim();
             const token = res.data.token;

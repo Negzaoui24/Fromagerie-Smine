@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 
-import axios from "axios";
-import { buildApiUrl } from "../config/api";
+import api, { buildApiUrl } from "../api";
 
 import {
 
@@ -28,7 +27,7 @@ const fetchData = async () => {
 
 try {
 
-const response = await axios.get(buildApiUrl("/produits/allProducts"));
+const response = await api.get(buildApiUrl("/produits/allProducts"));
 
 console.log("Données reçues:", response.data);
 

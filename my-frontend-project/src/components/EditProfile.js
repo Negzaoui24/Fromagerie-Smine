@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { buildApiUrl } from "../config/api";
+import api, { buildApiUrl } from "../api";
 import "./Auth.css";
 
 const EditProfile = () => {
@@ -16,7 +15,7 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(buildApiUrl("/users/profile/me"), {
+        const res = await api.get(buildApiUrl("/users/profile/me"), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         const user = res.data?.user || {};
@@ -58,7 +57,7 @@ const EditProfile = () => {
         newPassword: form.newPassword || undefined
       };
 
-      const res = await axios.put(buildApiUrl("/users/profile/update"), payload, {
+      const res = await api.put(buildApiUrl("/users/profile/update"), payload, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
 

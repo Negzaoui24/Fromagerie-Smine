@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import { buildApiUrl } from "../config/api";
+import api, { buildApiUrl } from "../api";
 import "./Auth.css";
 
 const ForgotPassword = () => {
@@ -17,7 +16,7 @@ const ForgotPassword = () => {
     setMessage("");
 
     try {
-      const res = await axios.post(buildApiUrl("/users/forgot-password"), { email });
+      await api.post(buildApiUrl("/users/forgot-password"), { email });
       setMessageType("success");
       setMessage("Si cet email existe dans notre système, vous recevrez un lien de réinitialisation.");
 

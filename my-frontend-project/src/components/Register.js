@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api, { buildApiUrl } from "../api";
 import { Link, useLocation } from "react-router-dom";
 import "./Auth.css";
-import { buildApiUrl } from "../config/api";
 
 const Register = () => {
   const location = useLocation();
@@ -12,11 +11,13 @@ const Register = () => {
     password: "",
     phone: "",
     address: "",
+    fiscalId: "",
     role: "user"
   });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locationMessage, setLocationMessage] = useState("");
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -37,13 +38,34 @@ const Register = () => {
     });
   };
 
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationMessage("La géolocalisation n'est pas supportée par ce navigateur.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setFormData((prev) => ({
+          ...prev,
+          address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+        }));
+        setLocationMessage("Adresse remplie avec votre position actuelle.");
+      },
+      () => {
+        setLocationMessage("Impossible de récupérer la position actuelle.");
+      }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage("");
 
     try {
-      const response = await axios.post(
+      const response = await api.post(
         buildApiUrl("/users/register"),
         formData
       );
@@ -200,6 +222,20 @@ const Register = () => {
             </div>
 
             <div className="auth-field">
+              <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="register-fiscalId">Matricule fiscale</label>
+              <input
+                id="register-fiscalId"
+                type="text"
+                name="fiscalId"
+                placeholder="Votre matricule fiscale"
+                value={formData.fiscalId}
+                onChange={handleChange}
+                required
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+              />
+            </div>
+
+            <div className="auth-field">
               <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="register-address">Adresse</label>
               <input
                 id="register-address"
@@ -210,6 +246,16 @@ const Register = () => {
                 onChange={handleChange}
                 className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
               />
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                className="mt-3 inline-flex items-center rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+              >
+                Utiliser ma position actuelle
+              </button>
+              {locationMessage && (
+                <p className="mt-2 text-sm text-slate-600">{locationMessage}</p>
+              )}
             </div>
 
             <button

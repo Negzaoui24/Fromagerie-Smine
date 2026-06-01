@@ -27,7 +27,7 @@ import {
   useTheme
 } from "@mui/material";
 import { Edit, Delete, CloudUpload } from "@mui/icons-material";
-import { buildApiUrl } from "../config/api";
+import api, { buildApiUrl } from "../api";
 import { resolveMediaUrl } from "../config/media";
 
 const API_URL = buildApiUrl("/produits");
@@ -161,8 +161,7 @@ const ProductManager = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_URL, { credentials: "include" });
-      const data = await res.json();
+      const { data } = await api.get(API_URL);
       if (data.status === "ok" && data.produits) {
         setProducts(data.produits);
       } else {
@@ -178,8 +177,7 @@ const ProductManager = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch(buildApiUrl("/categories"), { credentials: "include" });
-      const data = await res.json();
+      const { data } = await api.get(buildApiUrl("/categories"));
       if (data.status === "ok" && data.categories) {
         setCategories(data.categories);
       } else {
@@ -244,12 +242,8 @@ const ProductManager = () => {
         formData.append('images', image);
       });
 
-      const res = await fetch(`${API_URL}/add`, {
-        method: "POST",
-        body: formData,
-        credentials: "include"
-      });
-      const data = await res.json();
+      const response = await api.post(`${API_URL}/add`, formData);
+      const data = response.data;
       console.log("Réponse du serveur (add):", data);
       
           if (data.status === "ok") {
@@ -338,12 +332,8 @@ const ProductManager = () => {
         console.log("Aucune nouvelle image sélectionnée - les anciennes images seront conservées");
       }
 
-      const res = await fetch(`${API_URL}/update/${editingId}`, {
-        method: "PUT",
-        body: formData,
-        credentials: "include"
-      });
-      const data = await res.json();
+      const response = await api.put(`${API_URL}/update/${editingId}`, formData);
+      const data = response.data;
       console.log("Réponse du serveur:", data);
       
       if (data.status === "ok") {
@@ -363,8 +353,7 @@ const ProductManager = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer ce produit?")) {
       try {
-        const res = await fetch(`${API_URL}/delete/${id}`, { method: "DELETE" });
-        const data = await res.json();
+        const { data } = await api.delete(`${API_URL}/delete/${id}`);
         if (data.status === "ok") {
           setMessage({ text: "Produit supprimé avec succès", type: "success" });
           await fetchProducts();

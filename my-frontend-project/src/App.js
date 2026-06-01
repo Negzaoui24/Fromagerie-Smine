@@ -15,6 +15,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "./pages/CheckoutForm";
 import ProtectedRoute from "./components/ProtectedRoute";
+import OfflineBanner from "./components/OfflineBanner";
 
 const stripePromise = loadStripe(
   process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder"
@@ -22,8 +23,10 @@ const stripePromise = loadStripe(
 
 const App = () => {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/client/home" replace />} />
+    <>
+      <OfflineBanner />
+      <Routes>
+        <Route path="/" element={<Navigate to="/client/home" replace />} />
       <Route path="/login-selection" element={<LoginSelection />} />
       <Route path="/register" element={<Register />} />
       <Route path="/Login" element={<Login />} />
@@ -111,6 +114,7 @@ const App = () => {
 
       <Route path="*" element={<Navigate to="/client/home" replace />} />
     </Routes>
+    </>
   );
 };
 

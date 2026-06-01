@@ -10,14 +10,14 @@ const SUPER_ADMIN_EMAILS = [
 ];
 const RESTRICTED_CREATION_ROLES = ["admin", "super_admin", "commercial"];
 const isAdminRole = (role) => ["admin", "super_admin"].includes(role);
-const JWT_SECRET = process.env.JWT_SECRET || config.get("jwtSecret");
-const TOKEN_EXPIRE = process.env.TOKEN_EXPIRE || config.get("tokenExpire");
+const JWT_SECRET = process.env.JWT_SECRET || (config.has && config.has("jwtSecret") ? config.get("jwtSecret") : "dev_jwt_secret");
+const TOKEN_EXPIRE = process.env.TOKEN_EXPIRE || (config.has && config.has("tokenExpire") ? config.get("tokenExpire") : "1d");
 // @route POST api/users
 // @desc Register new user
 // @access Public
 router.post("/register", async (req, res) => {
     // Destructure required fields from req.body
-const { username, email, password, role, phone, address } = req.body;
+const { username, email, password, role, phone, address, fiscalId } = req.body;
 
     if (RESTRICTED_CREATION_ROLES.includes(role)) {
         const token = req.headers.authorization?.split(" ")[1];
@@ -71,10 +71,10 @@ const { username, email, password, role, phone, address } = req.body;
     }
 
     // Check if any required fields are missing
-    if (!username || !email || !password) {
-        return res
-            .status(400)
-            .send({ status: "notok", msg: "Please enter all required data" });
+    if (!username || !email || !password || (!RESTRICTED_CREATION_ROLES.includes(role) && !fiscalId)) {
+      return res
+        .status(400)
+        .send({ status: "notok", msg: "Veuillez remplir tous les champs obligatoires, y compris la matricule fiscale." });
     }
     // Check if email already exists
     User.findOne({ email: email })
@@ -85,13 +85,16 @@ const { username, email, password, role, phone, address } = req.body;
                     .send({ status: "notokmail", msg: "Email already exists" });
             }
             // Create a new user instance
-                const newUser = new User({
+                const accountStatus = RESTRICTED_CREATION_ROLES.includes(role) ? "approved" : "pending";
+            const newUser = new User({
                     username,
                     email,
                     password,
                     role: role || "user",
                     phone: phone || "",
-                    address: address || ""
+                    address: address || "",
+                    fiscalId: fiscalId || "",
+                    accountStatus
                 });
             // Generate salt and hash password
             bcrypt.genSalt(10, (err, salt) => {
@@ -112,26 +115,32 @@ const { username, email, password, role, phone, address } = req.body;
                     newUser
                         .save()
                         .then((user) => {
-                            // Generate JWT token
-                            jwt.sign({ id: user.id, name: user.username, role: user.role },
-                                JWT_SECRET, { expiresIn: TOKEN_EXPIRE },
-                                (err, token) => {
-                                    if (err) {
-                                        return res
-                                            .status(500)
-                                            .send({ status: "error", msg: "Internal server error" });
+                            if (user.accountStatus === "approved") {
+                                jwt.sign({ id: user.id, name: user.username, role: user.role },
+                                    JWT_SECRET, { expiresIn: TOKEN_EXPIRE },
+                                    (err, token) => {
+                                        if (err) {
+                                            return res
+                                                .status(500)
+                                                .send({ status: "error", msg: "Internal server error" });
+                                        }
+                                        res
+                                            .status(200)
+                                            .send({
+                                                status: "ok",
+                                                msg: "Successfully registered",
+                                                token,
+                                                user,
+                                            });
                                     }
-                                    // Send response with token and user details
-                                    res
-                                        .status(200)
-                                        .send({
-                                            status: "ok",
-                                            msg: "Successfully registered",
-                                            token,
-                                            user,
-                                        });
-                                }
-                            );
+                                );
+                            } else {
+                                res.status(200).send({
+                                    status: "pending",
+                                    msg: "Votre demande de creation de compte a ete envoyee. Elle doit etre approuvee par un administrateur.",
+                                    user
+                                });
+                            }
                         })
                         .catch((err) => {
                             return res
@@ -175,10 +184,13 @@ router.put("/:id", authMiddleware, async (req, res) => {
     }
 
     const updatePayload = {};
-    const { username, email, role } = req.body;
+    const { username, email, role, accountStatus } = req.body;
     if (username) updatePayload.username = username;
     if (email) updatePayload.email = email;
     if (role) updatePayload.role = role;
+    if (accountStatus && ["pending", "approved", "rejected"].includes(accountStatus)) {
+      updatePayload.accountStatus = accountStatus;
+    }
 
     const updatedUser = await User.findByIdAndUpdate(req.params.id, updatePayload, { new: true }).select("-password");
     if (!updatedUser) {
@@ -232,6 +244,11 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Utilisateur non trouvé", msg: "Utilisateur non trouvé" });
+    }
+
+    const accountStatus = user.accountStatus || "approved";
+    if (accountStatus !== "approved") {
+      return res.status(403).json({ message: "Compte non approuve", msg: accountStatus === "rejected" ? "Votre demande a ete refusee." : "Votre compte est en attente d'approbation par un administrateur." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);

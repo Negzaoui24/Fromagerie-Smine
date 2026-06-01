@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { buildApiUrl } from "../config/api";
+import api, { buildApiUrl } from "../api";
 import "./Auth.css";
 
 const CommercialLogin = () => {
@@ -24,7 +23,7 @@ const CommercialLogin = () => {
     setIsSubmitting(true);
     setMessage("");
     try {
-      const response = await axios.post(
+      const response = await api.post(
         buildApiUrl("/users/login"),
         {
           email: formData.email,

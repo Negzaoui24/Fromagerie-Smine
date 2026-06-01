@@ -25,7 +25,7 @@
 
 ### Frontend environment variables
 
-- `REACT_APP_API_BASE_URL=https://your-backend-project.vercel.app`
+- `REACT_APP_API_URL=https://fromagerie-smine-swart.vercel.app`
 - `REACT_APP_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key`
 
 ## 3. Important note

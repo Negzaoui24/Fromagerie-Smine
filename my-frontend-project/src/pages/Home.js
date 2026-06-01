@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import axios from "axios";
 import { useLocation } from "react-router-dom";
-import { buildApiUrl } from "../config/api";
+import api from "../api";
 import { resolveMediaUrl } from "../config/media";
 import "./Home.css";
 
@@ -33,12 +32,7 @@ function Home() {
       return;
     }
 
-    axios
-      .get(buildApiUrl("/users/home"), {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
+    api.get("/users/home")
       .then((res) => setMessage(res.data.msg))
       .catch(() => {
         setMessage("");
@@ -48,8 +42,7 @@ function Home() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(buildApiUrl("/categories"));
-        const data = await response.json();
+        const { data } = await api.get("/categories");
 
         if (data.status === "ok" && Array.isArray(data.categories)) {
           setCategories(data.categories);
@@ -80,8 +73,7 @@ function Home() {
     const fetchProducts = async () => {
       setLoadingProducts(true);
       try {
-        const response = await fetch(buildApiUrl("/produits"));
-        const data = await response.json();
+        const { data } = await api.get("/produits");
         setProducts(Array.isArray(data.produits) ? data.produits : []);
       } catch (error) {
         console.error("Erreur chargement produits:", error);

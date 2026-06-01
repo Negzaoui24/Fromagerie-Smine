@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api, { buildApiUrl } from "../api";
 import CategoryManager from "./CategoryManager";
 import ProductManager from "./ProductManager";
-import { buildApiUrl } from "../config/api";
 import "./AdminDashboard.css";
 
 const SUPER_ADMIN_EMAILS = [
@@ -143,7 +142,7 @@ function AdminDashboard() {
         return;
       }
 
-      const response = await axios.post(
+      const response = await api.post(
         buildApiUrl("/users/register"),
         {
           username: adminForm.username,
@@ -222,7 +221,7 @@ function AdminDashboard() {
     setUsersError("");
 
     try {
-      const response = await axios.get(buildApiUrl("/users"), {
+      const response = await api.get(buildApiUrl("/users"), {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`
         }
@@ -243,7 +242,7 @@ function AdminDashboard() {
     setCommercialsLoading(true);
 
     try {
-      const response = await axios.get(buildApiUrl("/users/commercials"));
+      const response = await api.get(buildApiUrl("/users/commercials"));
       const commercialUsers = Array.isArray(response.data.commercials) ? response.data.commercials : [];
       setCommercials(commercialUsers);
     } catch (error) {
@@ -265,7 +264,7 @@ function AdminDashboard() {
     try {
       // Admins consulte toutes les commandes, commerciaux consulte seulement les leurs
       const endpoint = isCommercialUser ? "/orders/commercial" : "/orders";
-      const response = await axios.get(buildApiUrl(endpoint), {
+      const response = await api.get(buildApiUrl(endpoint), {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`
         }
@@ -325,7 +324,7 @@ function AdminDashboard() {
       if (editUserForm.email.trim()) payload.email = editUserForm.email.trim();
       if (editUserForm.role) payload.role = editUserForm.role;
 
-      const response = await axios.put(
+      const response = await api.put(
         buildApiUrl(`/users/${editingUserId}`),
         payload,
         {
@@ -359,7 +358,7 @@ function AdminDashboard() {
 
     setUserFeedback({ text: "", type: "" });
     try {
-      await axios.delete(buildApiUrl(`/users/${userId}`), {
+      await api.delete(buildApiUrl(`/users/${userId}`), {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`
         }
@@ -377,6 +376,38 @@ function AdminDashboard() {
     }
   };
 
+  const handleUpdateUserStatus = async (userId, status) => {
+    if (!userId || !["pending", "approved", "rejected"].includes(status)) {
+      return;
+    }
+
+    setUserFeedback({ text: "", type: "" });
+    try {
+      const response = await api.put(
+        buildApiUrl(`/users/${userId}`),
+        { accountStatus: status },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`
+          }
+        }
+      );
+      const updatedUser = response.data.user;
+      setUsers((current) =>
+        current.map((user) => (user._id === updatedUser._id ? updatedUser : user))
+      );
+      setUserFeedback({
+        text: response.data.msg || "Statut utilisateur mis a jour.",
+        type: "success"
+      });
+    } catch (error) {
+      setUserFeedback({
+        text: error.response?.data?.msg || "Impossible de mettre à jour le statut utilisateur.",
+        type: "error"
+      });
+    }
+  };
+
   const handleUpdateOrderStatus = async (orderId, nextStatus) => {
     if (!orderId || !VALID_ORDER_STATUSES.includes(nextStatus)) {
       return;
@@ -384,7 +415,7 @@ function AdminDashboard() {
 
     setOrderFeedback({ text: "", type: "" });
     try {
-      const response = await axios.patch(
+      const response = await api.patch(
         buildApiUrl(`/orders/${orderId}/status`),
         { status: nextStatus },
         {
@@ -664,6 +695,15 @@ function AdminDashboard() {
                       <strong>{user.username}</strong>
                       <span>{user.email}</span>
                       <span className="admin-users-role">{user.role}</span>
+                      <span className={`admin-users-status admin-users-status-${user.accountStatus || 'approved'}`}>
+                        {user.accountStatus ? user.accountStatus : 'approved'}
+                      </span>
+                      <span className="admin-users-fiscal">
+                        Matricule fiscale: {user.fiscalId || "-"}
+                      </span>
+                      <span className="admin-users-address">
+                        Adresse: {user.address || "Non renseignée"}
+                      </span>
                     </div>
                   )}
                   <div className="admin-users-actions">
@@ -678,6 +718,12 @@ function AdminDashboard() {
                       </>
                     ) : (
                       <>
+                        {user.accountStatus === "pending" && (
+                          <>
+                            <button type="button" onClick={() => handleUpdateUserStatus(user._id, "approved")}>Approuver</button>
+                            <button type="button" onClick={() => handleUpdateUserStatus(user._id, "rejected")}>Refuser</button>
+                          </>
+                        )}
                         <button type="button" onClick={() => startEditingUser(user)}>
                           Modifier
                         </button>

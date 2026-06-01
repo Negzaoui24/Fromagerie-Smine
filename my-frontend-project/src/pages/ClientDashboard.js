@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { buildApiUrl } from "../config/api";
+import api, { buildApiUrl } from "../api";
 import { resolveMediaUrl } from "../config/media";
 import "./ClientDashboard.css";
 
@@ -43,12 +43,12 @@ function ClientDashboard() {
 
       try {
         const [catRes, prodRes] = await Promise.all([
-          fetch(CATEGORY_URL),
-          fetch(PRODUCTS_URL)
+          api.get(CATEGORY_URL),
+          api.get(PRODUCTS_URL)
         ]);
 
-        const catData = await catRes.json();
-        const prodData = await prodRes.json();
+        const catData = catRes.data;
+        const prodData = prodRes.data;
 
         setCategories(Array.isArray(catData.categories) ? catData.categories : []);
         setProducts(Array.isArray(prodData.produits) ? prodData.produits : []);

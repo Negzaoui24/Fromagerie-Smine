@@ -1,7 +1,7 @@
 // CheckoutForm.js
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { useState } from "react";
-import { buildApiUrl } from "../config/api";
+import api from "../api";
 
 function CheckoutForm() {
   const stripe = useStripe();
@@ -16,13 +16,7 @@ function CheckoutForm() {
     setMessage(null);
 
     try {
-      const res = await fetch(buildApiUrl("/stripe/create-payment-intent"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: 1000 }),
-      });
-
-      const data = await res.json();
+      const { data } = await api.post("/stripe/create-payment-intent", { amount: 1000 });
 
       const result = await stripe.confirmCardPayment(data.clientSecret, {
         payment_method: {
