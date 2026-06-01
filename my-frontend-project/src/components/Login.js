@@ -92,7 +92,7 @@ const Login = () => {
             } else if (role === "gros") {
                 redirectPath = "/gros";
             } else if (role === "user") {
-                redirectPath = "/client/home";
+                redirectPath = "/gros";
             }
 
             // Redirection avec un petit délai pour laisser voir le message
