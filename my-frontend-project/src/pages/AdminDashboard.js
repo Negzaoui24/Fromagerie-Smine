@@ -69,8 +69,8 @@ function AdminDashboard() {
     if (isCommercialUser) {
       return "orders";
     }
-    // Pour admins, afficher le panneau des catégories par défaut
-    return "categories";
+    // Pour admins, afficher d'abord les boutons d'action, pas la gestion des categories
+    return "";
   });
   const [adminForm, setAdminForm] = useState({
     username: "",

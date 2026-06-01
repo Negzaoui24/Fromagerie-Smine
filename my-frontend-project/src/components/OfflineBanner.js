@@ -6,7 +6,26 @@ const OfflineBanner = () => {
   const [installMessage, setInstallMessage] = useState("");
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
+    const checkOnline = async () => {
+      if (!navigator.onLine) {
+        setIsOnline(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/favicon.ico", {
+          method: "HEAD",
+          cache: "no-store"
+        });
+        setIsOnline(response.ok);
+      } catch {
+        setIsOnline(false);
+      }
+    };
+
+    const handleOnline = async () => {
+      await checkOnline();
+    };
     const handleOffline = () => setIsOnline(false);
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
@@ -16,6 +35,8 @@ const OfflineBanner = () => {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    checkOnline();
 
     return () => {
       window.removeEventListener("online", handleOnline);
@@ -39,13 +60,21 @@ const OfflineBanner = () => {
     setPromptEvent(null);
   };
 
+  if (isOnline) {
+    return null;
+  }
+
   return (
     <div className="offline-banner">
       <p>Vous êtes hors ligne — Fromagerie Smine affiche les dernières données disponibles</p>
-      {promptEvent && (
+      {promptEvent ? (
         <button type="button" className="install-button" onClick={handleInstall}>
           Ajouter à l'écran d'accueil
         </button>
+      ) : (
+        <p className="install-fallback">
+          Pour ajouter cette application à l'écran d'accueil, utilisez le menu de votre navigateur et choisissez "Ajouter à l'écran d'accueil".
+        </p>
       )}
       {installMessage && <p className="install-message">{installMessage}</p>}
     </div>
