@@ -268,6 +268,19 @@ function GrosPage() {
     return { quantity, total };
   }, [cartItems]);
 
+  const orderStatusLabels = useMemo(
+    () => ({
+      pending: "En attente",
+      confirmed: "Confirmée",
+      accepted: "Acceptée",
+      rejected: "Rejetée",
+      shipped: "Expédiée",
+      delivered: "Livrée",
+      cancelled: "Annulée"
+    }),
+    []
+  );
+
   const selectedCommercial = useMemo(
     () => commercialOptions.find((option) => option._id === selectedCommercialId),
     [commercialOptions, selectedCommercialId]
@@ -556,36 +569,52 @@ function GrosPage() {
                 Aucun article pour le moment. Choisissez une référence et cliquez sur "Ajouter au panier".
               </div>
             ) : (
-              cartItems.map((item) => (
-                <article key={item.productId} className="commercial-cart-item">
-                  <div>
-                    <strong>{item.name}</strong>
-                    <p>
-                      {item.quantity} × {item.price} DT / {item.unit}
-                    </p>
-                  </div>
-                  <div className="commercial-cart-item-actions">
-                    <button type="button" onClick={() => updateCartQuantity(item.productId, -1)} aria-label={`Réduire ${item.name}`}>
-                      -
-                    </button>
-                    <span>{item.quantity}</span>
-                    <button type="button" onClick={() => updateCartQuantity(item.productId, 1)} aria-label={`Augmenter ${item.name}`}>
-                      +
-                    </button>
-                    <button type="button" className="commercial-cart-remove" onClick={() => removeCartItem(item.productId)}>
-                      Supprimer
-                    </button>
-                  </div>
-                </article>
-              ))
+              cartItems.map((item) => {
+                const itemTotal = item.quantity * item.price;
+                return (
+                  <article key={item.productId} className="commercial-cart-item">
+                    <div className="commercial-cart-item-content">
+                      <strong>{item.name}</strong>
+                      <p>
+                        {item.quantity} × {item.price.toFixed(2)} DT / {item.unit}
+                      </p>
+                      <p className="commercial-cart-item-total">
+                        Sous-total : {itemTotal.toFixed(2)} DT
+                      </p>
+                    </div>
+                    <div className="commercial-cart-item-actions">
+                      <button type="button" onClick={() => updateCartQuantity(item.productId, -1)} aria-label={`Réduire ${item.name}`}>
+                        -
+                      </button>
+                      <span>{item.quantity}</span>
+                      <button type="button" onClick={() => updateCartQuantity(item.productId, 1)} aria-label={`Augmenter ${item.name}`}>
+                        +
+                      </button>
+                      <button type="button" className="commercial-cart-remove" onClick={() => removeCartItem(item.productId)}>
+                        Supprimer
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
             )}
           </div>
 
-          <div className="commercial-cart-sidebar">
+          <aside className="commercial-cart-sidebar">
             <div className="commercial-cart-summary">
-              <p>Articles sélectionnés : {cartSummary.quantity}</p>
-              <strong>Total estimé : {cartSummary.total.toFixed(2)} DT</strong>
+              <p>{cartSummary.quantity} article(s) dans le panier</p>
+              <strong>{cartSummary.total.toFixed(2)} DT</strong>
+              <p className="commercial-cart-hint">Prix calculé selon la quantité et l’unité de vente. Ajustez vos quantités avant validation.</p>
             </div>
+
+            <button
+              type="button"
+              className="commercial-btn commercial-btn-secondary"
+              onClick={() => setCartItems([])}
+              disabled={cartItems.length === 0}
+            >
+              Vider le panier
+            </button>
 
             <div className="commercial-wholesale-form">
               <label className="commercial-client-field">
@@ -638,50 +667,49 @@ function GrosPage() {
                   ))}
                 </select>
               </label>
+            </div>
 
-              <div className="commercial-cart-actions">
-                <button
-                  type="button"
-                  className="commercial-btn"
-                  onClick={handleCheckout}
-                  disabled={!canValidateOrder}
-                >
-                  {canValidateOrder ? "Valider la commande" : "Informations manquantes"}
-                </button>
-                {checkoutRequirements.length > 0 && (
-                  <p className="commercial-cta-hint">{checkoutRequirements[0]}</p>
-                )}
-              </div>
-
-              {cartMessage && (
-                <p className={`commercial-feedback commercial-feedback-${cartMessageType}`}>{cartMessage}</p>
+            <div className="commercial-cart-actions">
+              <button
+                type="button"
+                className="commercial-btn"
+                onClick={handleCheckout}
+                disabled={!canValidateOrder}
+              >
+                {canValidateOrder ? "Valider la commande" : "Informations manquantes"}
+              </button>
+              {checkoutRequirements.length > 0 && (
+                <p className="commercial-cta-hint">{checkoutRequirements[0]}</p>
               )}
+            </div>
 
-              {!isLoggedIn && (
-                <div className="commercial-alert commercial-alert-inline">
-                  <p>
-                    Connectez-vous ou créez un compte pour associer un commercial et finaliser votre commande.
-                  </p>
+            {cartMessage && (
+              <p className={`commercial-feedback commercial-feedback-${cartMessageType}`}>{cartMessage}</p>
+            )}
+
+            {!isLoggedIn && (
+              <div className="commercial-alert commercial-alert-inline">
+                <p>
+                  Connectez-vous ou créez un compte pour associer un commercial et finaliser votre commande.
+                </p>
                 <button
                   type="button"
                   className="commercial-btn commercial-btn-secondary"
                   onClick={() => navigate("/gros/login")}
                 >
-                    Se connecter / Créer un compte
-                  </button>
-                </div>
-              )}
-            </div>
+                  Se connecter / Créer un compte
+                </button>
+              </div>
+            )}
 
             {selectedCommercial && (
               <p className="commercial-hint">
                 Commercial sélectionné : {selectedCommercial.username} ({selectedCommercial.email})
               </p>
             )}
-          </div>
+          </aside>
         </div>
       </section>
-
       <section id="orders" className="commercial-section commercial-orders-section">
         <div className="commercial-section-head">
           <p className="commercial-section-kicker">Demandes</p>
@@ -701,35 +729,40 @@ function GrosPage() {
             </div>
           ) : (
             <div className="commercial-order-grid">
-              {orders.map((order) => (
-                <article key={order._id} className="commercial-order-card">
-                  <div className="commercial-order-meta">
-                    <h3>{order.customerName}</h3>
-                    <span className="commercial-order-status">{order.status || "pending"}</span>
-                  </div>
-                  <p className="commercial-order-detail">
-                    {order.customerEmail} · {order.customerPhone}
-                  </p>
-                  {order.customerLocation && (
-                    <p className="commercial-order-detail">{order.customerLocation}</p>
-                  )}
-                  <p className="commercial-order-detail">
-                    Commandée par {order.createdBy?.username || order.createdBy?.email || "Utilisateur"} le{" "}
-                    {new Date(order.createdAt).toLocaleDateString("fr-FR", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric"
-                    })}
-                  </p>
-                  <ul className="commercial-order-items">
-                    {order.items.map((item) => (
-                      <li key={`${order._id}-${item.productId}`}>
-                        {item.quantity} × {item.name} ({item.price} DT / {item.unit})
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
+              {orders.map((order) => {
+                const orderCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+                const orderTotal = order.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+                return (
+                  <article key={order._id} className="commercial-order-card">
+                    <div className="commercial-order-meta">
+                      <h3>{order.customerName || order.customerEmail || "Commande"}</h3>
+                      <span className={`commercial-order-status commercial-order-status-${order.status || "pending"}`}>
+                        {orderStatusLabels[order.status] || orderStatusLabels.pending}
+                      </span>
+                    </div>
+                    <p className="commercial-order-detail">
+                      {order.customerEmail} · {order.customerPhone}
+                    </p>
+                    <p className="commercial-order-detail">
+                      {order.customerLocation ? `${order.customerLocation} · ` : ""}{orderCount} article(s) · {orderTotal.toFixed(2)} DT
+                    </p>
+                    <p className="commercial-order-detail">
+                      Commandée le {new Date(order.createdAt).toLocaleDateString("fr-FR", {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric"
+                      })}
+                    </p>
+                    <ul className="commercial-order-items">
+                      {order.items.map((item) => (
+                        <li key={`${order._id}-${item.productId}`}>
+                          {item.quantity}× {item.name} ({item.price} DT/{item.unit})
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                );
+              })}
             </div>
           )
         ) : (
@@ -746,10 +779,12 @@ function GrosPage() {
         )}
       </section>
 
+
     </main>
   );
 }
 
 export default GrosPage;
+
 
 

@@ -3,6 +3,7 @@ import {
   Container,
   TextField,
   Button,
+  IconButton,
   Typography,
   Box,
   Table,
@@ -26,7 +27,7 @@ import {
   useMediaQuery,
   useTheme
 } from "@mui/material";
-import { Edit, Delete, CloudUpload } from "@mui/icons-material";
+import { Edit, Delete, CloudUpload, Info } from "@mui/icons-material";
 import api, { buildApiUrl } from "../api";
 import { resolveMediaUrl } from "../config/media";
 
@@ -64,6 +65,7 @@ const ProductManager = () => {
   });
   const [editingId, setEditingId] = useState(null);
   const [open, setOpen] = useState(false);
+  const [expandedProductId, setExpandedProductId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [searchText, setSearchText] = useState("");
@@ -915,52 +917,69 @@ const ProductManager = () => {
                     {product.categorie ? product.categorie.nom : "Sans catégorie"}
                   </Typography>
                 </Box>
-                <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                  {product.description || "Aucune description pour ce produit."}
-                </Typography>
-                <Grid container spacing={1} sx={{ mb: 1 }}>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="textSecondary">Quantité</Typography>
-                    <Typography>{product.quantite} {product.unite}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="textSecondary">Prix vente</Typography>
-                    <Typography>{product.prixVente} DT</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="textSecondary">Prix achat</Typography>
-                    <Typography>{product.prixAchat} DT</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="textSecondary">Gros</Typography>
-                    <Typography>{product.venteParGros ? "Oui" : "Non"}</Typography>
-                  </Grid>
-                  {product.venteParGros && (
-                    <Grid item xs={12}>
-                      <Typography variant="caption" color="textSecondary">Prix gros</Typography>
-                      <Typography>{product.prixVenteGros ? `${product.prixVenteGros} DT / ${product.uniteGros || product.unite}` : "-"}</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+                  <Typography variant="body2" color="textSecondary">
+                    {product.categorie ? product.categorie.nom : "Sans catégorie"} · {product.prixVente} DT
+                  </Typography>
+                  <IconButton
+                    aria-label="Afficher détails du produit"
+                    onClick={() => setExpandedProductId(expandedProductId === product._id ? null : product._id)}
+                    size="large"
+                    sx={{ border: '1px solid rgba(0,0,0,0.12)', borderRadius: 1 }}
+                  >
+                    <Info />
+                  </IconButton>
+                </Box>
+                {expandedProductId === product._id && (
+                  <Box sx={{ mb: 1, p: 1, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+                    <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                      {product.description || "Aucune description pour ce produit."}
+                    </Typography>
+                    <Grid container spacing={1}>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="textSecondary">Quantité</Typography>
+                        <Typography>{product.quantite} {product.unite}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="textSecondary">Prix vente</Typography>
+                        <Typography>{product.prixVente} DT</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="textSecondary">Prix achat</Typography>
+                        <Typography>{product.prixAchat} DT</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="textSecondary">Gros</Typography>
+                        <Typography>{product.venteParGros ? "Oui" : "Non"}</Typography>
+                      </Grid>
+                      {product.venteParGros && (
+                        <Grid item xs={12}>
+                          <Typography variant="caption" color="textSecondary">Prix gros</Typography>
+                          <Typography>{product.prixVenteGros ? `${product.prixVenteGros} DT / ${product.uniteGros || product.unite}` : "-"}</Typography>
+                        </Grid>
+                      )}
                     </Grid>
-                  )}
-                </Grid>
+                  </Box>
+                )}
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  <Button
-                    startIcon={<Edit />}
+                  <IconButton
+                    aria-label="Modifier le produit"
                     onClick={() => handleEditClick(product)}
                     color="warning"
-                    size="small"
-                    variant="outlined"
+                    size="large"
+                    sx={{ border: '1px solid rgba(0,0,0,0.12)', borderRadius: 1 }}
                   >
-                    Modifier
-                  </Button>
-                  <Button
-                    startIcon={<Delete />}
+                    <Edit />
+                  </IconButton>
+                  <IconButton
+                    aria-label="Supprimer le produit"
                     onClick={() => handleDelete(product._id)}
                     color="error"
-                    size="small"
-                    variant="outlined"
+                    size="large"
+                    sx={{ border: '1px solid rgba(0,0,0,0.12)', borderRadius: 1 }}
                   >
-                    Supprimer
-                  </Button>
+                    <Delete />
+                  </IconButton>
                 </Box>
               </Card>
             </Grid>
@@ -1017,25 +1036,24 @@ const ProductManager = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      startIcon={<Edit />}
+                    <IconButton
+                      aria-label="Modifier le produit"
                       onClick={() => handleEditClick(product)}
                       color="warning"
-                      size="small"
-                      variant="outlined"
-                      sx={{ mr: 1 }}
+                      size="large"
+                      sx={{ mr: 1, border: '1px solid rgba(0,0,0,0.12)', borderRadius: 1 }}
                     >
-                      Modifier
-                    </Button>
-                    <Button
-                      startIcon={<Delete />}
+                      <Edit />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Supprimer le produit"
                       onClick={() => handleDelete(product._id)}
                       color="error"
-                      size="small"
-                      variant="outlined"
+                      size="large"
+                      sx={{ border: '1px solid rgba(0,0,0,0.12)', borderRadius: 1 }}
                     >
-                      Supprimer
-                    </Button>
+                      <Delete />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}

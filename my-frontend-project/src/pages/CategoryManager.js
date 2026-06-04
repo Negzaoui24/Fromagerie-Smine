@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
   Typography,
   Box,
   TextField,
   Button,
+  IconButton,
   Alert,
   Table,
   TableContainer,
@@ -15,12 +16,17 @@ import {
   Paper,
   CircularProgress,
   Grid,
+  List,
+  ListItem,
+  ListItemAvatar,
+  Avatar,
+  ListItemText,
   Card,
   CardContent,
   useMediaQuery,
   useTheme
 } from "@mui/material";
-import { Delete, AddPhotoAlternate } from "@mui/icons-material";
+import { Delete, Edit, AddPhotoAlternate } from "@mui/icons-material";
 import api, { buildApiUrl } from "../api";
 import { resolveMediaUrl } from "../config/media";
 
@@ -33,6 +39,8 @@ const CategoryManager = () => {
   const [message, setMessage] = useState({ text: "", type: "" });
   const [editMode, setEditMode] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const formRef = useRef(null);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -58,6 +66,12 @@ const CategoryManager = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (editMode) {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [editMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,6 +115,7 @@ const CategoryManager = () => {
         setForm({ nom: "", description: "", image: null });
         setEditMode(false);
         setEditingCategory(null);
+        setShowForm(false);
         await fetchCategories();
       } else {
         setMessage({ text: data.msg || "Erreur lors de l'opération", type: "error" });
@@ -119,12 +134,14 @@ const CategoryManager = () => {
     });
     setEditMode(true);
     setEditingCategory(category);
+    setShowForm(true);
   };
 
   const handleCancelEdit = () => {
     setForm({ nom: "", description: "", image: null });
     setEditMode(false);
     setEditingCategory(null);
+    setShowForm(false);
   };
 
   const handleDelete = async (id) => {
@@ -147,6 +164,112 @@ const CategoryManager = () => {
     }
   };
 
+  let content;
+  if (loading) {
+    content = (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  } else if (categories.length === 0) {
+    content = <Alert severity="info">Aucune catégorie pour le moment.</Alert>;
+  } else if (isMobile) {
+    content = (
+      <List disablePadding>
+        {categories.map((cat) => (
+          <ListItem
+            key={cat._id}
+            divider
+            secondaryAction={
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <IconButton
+                  aria-label="Modifier la catégorie"
+                  onClick={() => handleEdit(cat)}
+                  size="large"
+                  sx={{ border: '1px solid rgba(0,0,0,0.12)', borderRadius: 1 }}
+                >
+                  <Edit />
+                </IconButton>
+                <IconButton
+                  aria-label="Supprimer la catégorie"
+                  onClick={() => handleDelete(cat._id)}
+                  size="large"
+                  color="error"
+                  sx={{ border: '1px solid rgba(0,0,0,0.12)', borderRadius: 1 }}
+                >
+                  <Delete />
+                </IconButton>
+              </Box>
+            }
+            sx={{ px: 0 }}
+          >
+            <ListItemAvatar>
+              <Avatar
+                variant="rounded"
+                src={cat.image ? resolveMediaUrl(cat.image) : undefined}
+                imgProps={{
+                  onError: (e) => {
+                    e.currentTarget.src = 'https://via.placeholder.com/56';
+                  }
+                }}
+                sx={{ width: 56, height: 56, mr: 1 }}
+              />
+            </ListItemAvatar>
+            <ListItemText
+              primary={cat.nom}
+              secondary={cat.description || "Aucune description"}
+            />
+          </ListItem>
+        ))}
+      </List>
+    );
+  } else {
+    content = (
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nom</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Image</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {categories.map((cat) => (
+              <TableRow key={cat._id}>
+                <TableCell>{cat.nom}</TableCell>
+                <TableCell>{cat.description || "-"}</TableCell>
+                <TableCell>
+                  <img
+                    src={resolveMediaUrl(cat.image)}
+                    alt={cat.nom}
+                    style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6 }}
+                    onError={(e) => { e.currentTarget.src = "https://via.placeholder.com/60"; }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button variant="outlined" size="small" onClick={() => handleEdit(cat)} sx={{ mr: 1 }}>
+                    Modifier
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    startIcon={<Delete />}
+                    onClick={() => handleDelete(cat._id)}
+                  >
+                    Supprimer
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  }
+
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>
@@ -159,16 +282,25 @@ const CategoryManager = () => {
         </Alert>
       )}
 
-      <Box component="form" onSubmit={handleSubmit} sx={{
-        mb: 4,
-        p: isMobile ? 2 : 3,
-        border: "1px solid #ddd",
-        borderRadius: 2,
-        backgroundColor: "#f9f9f9"
-      }}>
-        <Typography variant={isMobile ? "h6" : "h6"} sx={{ mb: 2 }}>
-          {editMode ? "Modifier la catégorie" : "Ajouter une catégorie"}
-        </Typography>
+      {!showForm && !editMode && (
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+          <Button variant="contained" onClick={() => setShowForm(true)}>
+            Ajouter une catégorie
+          </Button>
+        </Box>
+      )}
+
+      {(showForm || editMode) && (
+        <Box id="category-form" ref={formRef} component="form" onSubmit={handleSubmit} sx={{
+          mb: 4,
+          p: isMobile ? 2 : 3,
+          border: "1px solid #ddd",
+          borderRadius: 2,
+          backgroundColor: "#f9f9f9"
+        }}>
+          <Typography variant={isMobile ? "h6" : "h6"} sx={{ mb: 2 }}>
+            {editMode ? "Modifier la catégorie" : "Ajouter une catégorie"}
+          </Typography>
         <Grid container spacing={isMobile ? 1 : 2}>
           <Grid item xs={12} sm={6}>
             <TextField
@@ -253,101 +385,9 @@ const CategoryManager = () => {
           )}
         </Box>
       </Box>
-
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : categories.length === 0 ? (
-        <Alert severity="info">Aucune catégorie pour le moment.</Alert>
-      ) : (
-        isMobile ? (
-          // Vue cartes pour mobile
-          <Grid container spacing={2}>
-            {categories.map((cat) => (
-              <Grid item xs={12} sm={6} key={cat._id}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent>
-                    <Typography variant="h6" sx={{ mb: 1 }}>{cat.nom}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {cat.description || "Aucune description"}
-                    </Typography>
-                    {cat.image && (
-                      <Box sx={{ mb: 2 }}>
-                        <img
-                          src={resolveMediaUrl(cat.image)}
-                          alt={cat.nom}
-                          style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8 }}
-                          onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/200x120'; }}
-                        />
-                      </Box>
-                    )}
-                    <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
-                      <Button variant="outlined" size="small" onClick={() => handleEdit(cat)} fullWidth>
-                        Modifier
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        startIcon={<Delete />}
-                        onClick={() => handleDelete(cat._id)}
-                        fullWidth
-                      >
-                        Supprimer
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        ) : (
-          // Vue tableau pour desktop
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nom</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Image</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {categories.map((cat) => (
-                  <TableRow key={cat._id}>
-                    <TableCell>{cat.nom}</TableCell>
-                    <TableCell>{cat.description || "-"}</TableCell>
-                    <TableCell>
-                      <img
-                        src={resolveMediaUrl(cat.image)}
-                        alt={cat.nom}
-                        style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6 }}
-                        onError={(e) => { e.currentTarget.src = "https://via.placeholder.com/60"; }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outlined" size="small" onClick={() => handleEdit(cat)} sx={{ mr: 1 }}>
-                        Modifier
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        startIcon={<Delete />}
-                        onClick={() => handleDelete(cat._id)}
-                      >
-                        Supprimer
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )
       )}
+
+      {content}
     </Container>
   );
 };
