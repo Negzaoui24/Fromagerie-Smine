@@ -73,6 +73,39 @@ const ProductManager = () => {
   const [formErrors, setFormErrors] = useState({});
   const [dragActive, setDragActive] = useState(false);
 
+  const loadAdminSettings = () => {
+    const raw = localStorage.getItem("adminSettings");
+    if (!raw) {
+      return { showPriceHome: true, showPriceGros: true, requireAllProductFields: true };
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      return {
+        showPriceHome: parsed.showPriceHome !== false,
+        showPriceGros: parsed.showPriceGros !== false,
+        requireAllProductFields: parsed.requireAllProductFields !== false
+      };
+    } catch (err) {
+      return { showPriceHome: true, showPriceGros: true, requireAllProductFields: true };
+    }
+  };
+
+  const [requireAllProductFields, setRequireAllProductFields] = useState(
+    () => loadAdminSettings().requireAllProductFields
+  );
+
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key === "adminSettings") {
+        setRequireAllProductFields(loadAdminSettings().requireAllProductFields);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -90,7 +123,9 @@ const ProductManager = () => {
         }
         break;
       case "quantite":
-        if (!value || value === "") {
+        if (!requireAllProductFields && (!value || value === "")) {
+          delete errors.quantite;
+        } else if (!value || value === "") {
           errors.quantite = "La quantité est obligatoire";
         } else if (Number(value) < 0) {
           errors.quantite = "La quantité doit être positive";
@@ -99,7 +134,9 @@ const ProductManager = () => {
         }
         break;
       case "prixAchat":
-        if (!value || value === "") {
+        if (!requireAllProductFields && (!value || value === "")) {
+          delete errors.prixAchat;
+        } else if (!value || value === "") {
           errors.prixAchat = "Le prix d'achat est obligatoire";
         } else if (Number(value) < 0) {
           errors.prixAchat = "Le prix doit être positif";
@@ -108,7 +145,9 @@ const ProductManager = () => {
         }
         break;
       case "prixVente":
-        if (!value || value === "") {
+        if (!requireAllProductFields && (!value || value === "")) {
+          delete errors.prixVente;
+        } else if (!value || value === "") {
           errors.prixVente = "Le prix de vente est obligatoire";
         } else if (Number(value) < 0) {
           errors.prixVente = "Le prix doit être positif";
@@ -117,14 +156,18 @@ const ProductManager = () => {
         }
         break;
       case "unite":
-        if (!value || value === "") {
+        if (!requireAllProductFields && (!value || value === "")) {
+          delete errors.unite;
+        } else if (!value || value === "") {
           errors.unite = "L'unité est obligatoire";
         } else {
           delete errors.unite;
         }
         break;
       case "categorieId":
-        if (!value || value === "") {
+        if (!requireAllProductFields && (!value || value === "")) {
+          delete errors.categorieId;
+        } else if (!value || value === "") {
           errors.categorieId = "La catégorie est obligatoire";
         } else {
           delete errors.categorieId;
@@ -213,7 +256,12 @@ const ProductManager = () => {
   // Ajouter produit (POST /products/add)
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.quantite || !form.prixAchat || !form.prixVente || !form.unite || !form.categorieId) {
+    if (!form.name || !form.name.trim()) {
+      setMessage({ text: "Le nom du produit est obligatoire.", type: "error" });
+      return;
+    }
+
+    if (requireAllProductFields && (!form.quantite || !form.prixAchat || !form.prixVente || !form.unite || !form.categorieId)) {
       setMessage({ text: "Veuillez remplir tous les champs (choisir une catégorie existante)", type: "error" });
       return;
     }
@@ -735,7 +783,7 @@ const ProductManager = () => {
               fullWidth
               select
               SelectProps={{ native: true }}
-              label="Catégorie *"
+              label={requireAllProductFields ? "Catégorie *" : "Catégorie"}
               id="category-select"
               aria-label="Catégorie du produit"
               aria-describedby={formErrors.categorieId ? "categorieId-error" : undefined}
@@ -745,7 +793,12 @@ const ProductManager = () => {
                 validateField("categorieId", e.target.value);
               }}
               error={!!formErrors.categorieId}
-              helperText={formErrors.categorieId || "Sélectionnez ou créez une catégorie"}
+              helperText={
+                formErrors.categorieId ||
+                (requireAllProductFields
+                  ? "Sélectionnez ou créez une catégorie"
+                  : "Optionnel si seuls le nom et la catégorie sont requis")
+              }
               variant="outlined"
               size="medium"
               sx={{ minHeight: isMobile ? 56 : "auto" }}

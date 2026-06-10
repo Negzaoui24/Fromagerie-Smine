@@ -32,6 +32,15 @@ function GrosPage() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem("token")));
+  const [showPriceGros, setShowPriceGros] = useState(() => {
+    try {
+      const raw = localStorage.getItem("adminSettings");
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed?.showPriceGros !== false;
+    } catch (err) {
+      return true;
+    }
+  });
   const [activeView, setActiveView] = useState("catalog");
   const [clientHeroMedia, setClientHeroMedia] = useState(() => {
     const savedMedia = localStorage.getItem("clientHeroMedia");
@@ -106,8 +115,18 @@ function GrosPage() {
   }, []);
 
   useEffect(() => {
-    const handleStorage = () => {
-      setIsLoggedIn(Boolean(localStorage.getItem("token")));
+    const handleStorage = (event) => {
+      if (event.key === "token") {
+        setIsLoggedIn(Boolean(localStorage.getItem("token")));
+      }
+      if (event.key === "adminSettings") {
+        try {
+          const parsed = event.newValue ? JSON.parse(event.newValue) : null;
+          setShowPriceGros(parsed?.showPriceGros !== false);
+        } catch (err) {
+          setShowPriceGros(true);
+        }
+      }
     };
 
     window.addEventListener("storage", handleStorage);
@@ -532,12 +551,16 @@ function GrosPage() {
                     <h3>{product.name}</h3>
                     <span>{product.quantite} {product.uniteGros || product.unite}</span>
                   </div>
-                  <p className="commercial-product-price">
-                    {product.prixVenteGros
-                      ? `${product.prixVenteGros} DT / ${product.uniteGros || product.unite}`
-                      : "Prix à définir"}
-                  </p>
-                  <p className="commercial-product-description">{product.description || "Article disponible en vente par gros."}</p>
+                    {showPriceGros && (
+                      <p className="commercial-product-price">
+                        {product.prixVenteGros
+                          ? `${product.prixVenteGros} DT / ${product.uniteGros || product.unite}`
+                          : "Prix à définir"}
+                      </p>
+                    )}
+                    {product.description && (
+                      <p className="commercial-product-description">{product.description}</p>
+                    )}
                   <button
                     type="button"
                     className="commercial-btn commercial-btn-secondary"

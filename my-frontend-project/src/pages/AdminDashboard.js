@@ -46,6 +46,12 @@ const panels = [
     label: "Commandes",
     title: "Suivi des commandes",
     description: "Visualisez les commandes et mettez a jour leur statut."
+  },
+  {
+    id: "settings",
+    label: "Paramètres",
+    title: "Paramètres administrateur",
+    description: "Configurez l'affichage des prix et les validations produits."
   }
 ];
 
@@ -83,6 +89,25 @@ function AdminDashboard() {
     const savedMedia = localStorage.getItem("clientHeroMedia");
     return savedMedia ? JSON.parse(savedMedia) : null;
   });
+  const [adminSettings, setAdminSettings] = useState(() => {
+    try {
+      const savedSettings = localStorage.getItem("adminSettings");
+      return savedSettings
+        ? JSON.parse(savedSettings)
+        : {
+            showPriceHome: true,
+            showPriceGros: true,
+            requireAllProductFields: true,
+          };
+    } catch (error) {
+      return {
+        showPriceHome: true,
+        showPriceGros: true,
+        requireAllProductFields: true,
+      };
+    }
+  });
+  const [settingsMessage, setSettingsMessage] = useState("");
   const [videoMessage, setVideoMessage] = useState("");
   const [isSubmittingAdmin, setIsSubmittingAdmin] = useState(false);
   const [users, setUsers] = useState([]);
@@ -113,6 +138,29 @@ function AdminDashboard() {
       contentPanelRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [activePanel]);
+
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key === "adminSettings") {
+        try {
+          setAdminSettings(event.newValue ? JSON.parse(event.newValue) : {
+            showPriceHome: true,
+            showPriceGros: true,
+            requireAllProductFields: true,
+          });
+        } catch (error) {
+          setAdminSettings({
+            showPriceHome: true,
+            showPriceGros: true,
+            requireAllProductFields: true,
+          });
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const activeConfig = useMemo(
     () => visiblePanels.find((panel) => panel.id === activePanel),
@@ -174,6 +222,22 @@ function AdminDashboard() {
       });
     } finally {
       setIsSubmittingAdmin(false);
+    }
+  };
+
+  const handleSaveAdminSettings = (event) => {
+    event.preventDefault();
+    try {
+      const nextSettings = {
+        showPriceHome: adminSettings.showPriceHome,
+        showPriceGros: adminSettings.showPriceGros,
+        requireAllProductFields: adminSettings.requireAllProductFields,
+      };
+      localStorage.setItem("adminSettings", JSON.stringify(nextSettings));
+      setAdminSettings(nextSettings);
+      setSettingsMessage("Paramètres enregistrés avec succès.");
+    } catch (error) {
+      setSettingsMessage("Impossible d'enregistrer les paramètres.");
     }
   };
 
@@ -585,6 +649,72 @@ function AdminDashboard() {
           {adminMessage.text && (
             <p className={`admin-feedback admin-feedback-${adminMessage.type}`}>
               {adminMessage.text}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    if (activePanel === "settings") {
+      return (
+        <div className="admin-simple-card">
+          <form className="admin-form-grid" onSubmit={handleSaveAdminSettings}>
+            <div className="admin-form-field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={adminSettings.showPriceHome}
+                  onChange={(e) =>
+                    setAdminSettings({
+                      ...adminSettings,
+                      showPriceHome: e.target.checked,
+                    })
+                  }
+                />
+                <span>Afficher les prix sur la page client (Home)</span>
+              </label>
+            </div>
+
+            <div className="admin-form-field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={adminSettings.showPriceGros}
+                  onChange={(e) =>
+                    setAdminSettings({
+                      ...adminSettings,
+                      showPriceGros: e.target.checked,
+                    })
+                  }
+                />
+                <span>Afficher les prix sur la page de vente en gros</span>
+              </label>
+            </div>
+
+            <div className="admin-form-field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={adminSettings.requireAllProductFields}
+                  onChange={(e) =>
+                    setAdminSettings({
+                      ...adminSettings,
+                      requireAllProductFields: e.target.checked,
+                    })
+                  }
+                />
+                <span>Exiger tous les champs lors de la création de produits</span>
+              </label>
+            </div>
+
+            <button type="submit" className="admin-primary-button">
+              Enregistrer les paramètres
+            </button>
+          </form>
+
+          {settingsMessage && (
+            <p className="admin-feedback admin-feedback-success" style={{ marginTop: "1rem" }}>
+              {settingsMessage}
             </p>
           )}
         </div>

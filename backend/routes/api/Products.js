@@ -47,26 +47,31 @@ router.post("/add", upload.array("images", 10), async (req, res) => {
     ? Number(req.body.prixVenteGros)
     : null;
 
+  const quantiteValue = quantite !== undefined && quantite !== "" ? Number(quantite) : 0;
+  const prixAchatValue = prixAchat !== undefined && prixAchat !== "" ? Number(prixAchat) : 0;
+  const prixVenteValue = prixVente !== undefined && prixVente !== "" ? Number(prixVente) : 0;
+  const uniteValue = unite && unite.trim() ? unite : "piece";
+  const categorieValue = categorie && categorie.trim() ? categorie : null;
+
   console.log("=== DEBUG PRODUCT ADD ===");
   console.log("req.body:", req.body);
   console.log("categorie received:", categorie);
   console.log("categorie type:", typeof categorie);
-  console.log("categorie is valid ObjectId:", require('mongoose').Types.ObjectId.isValid(categorie));
+  console.log("categorie is valid ObjectId:", categorieValue ? require('mongoose').Types.ObjectId.isValid(categorieValue) : "N/A");
 
-  // Check if categorie is a valid ObjectId
-  if (categorie && !require('mongoose').Types.ObjectId.isValid(categorie)) {
+  if (!name || !name.trim()) {
+    console.log("Validation failed - missing name");
+    return res.status(400).json({
+      status: "notok",
+      msg: "Le nom du produit est requis"
+    });
+  }
+
+  if (categorieValue && !require('mongoose').Types.ObjectId.isValid(categorieValue)) {
     console.log("Invalid categorie ObjectId");
     return res.status(400).json({
       status: "notok",
       msg: "ID de catégorie invalide"
-    });
-  }
-
-  if (!name || quantite == null || prixAchat == null || prixVente == null || !unite || !categorie) {
-    console.log("Validation failed - missing fields");
-    return res.status(400).json({
-      status: "notok",
-      msg: "Veuillez renseigner tous les champs requis (name, quantite, prixAchat, prixVente, unite, categorie)"
     });
   }
 
@@ -78,15 +83,17 @@ router.post("/add", upload.array("images", 10), async (req, res) => {
     });
   }
 
-  // Check if categorie exists
-  const Categorie = require("../../models/Categorie");
-  const categorieExists = await Categorie.findById(categorie);
-  if (!categorieExists) {
-    console.log("Categorie not found in database");
-    return res.status(400).json({
-      status: "notok",
-      msg: "Catégorie sélectionnée n'existe pas"
-    });
+  // Check if categorie exists when provided
+  if (categorieValue) {
+    const Categorie = require("../../models/Categorie");
+    const categorieExists = await Categorie.findById(categorieValue);
+    if (!categorieExists) {
+      console.log("Categorie not found in database");
+      return res.status(400).json({
+        status: "notok",
+        msg: "Catégorie sélectionnée n'existe pas"
+      });
+    }
   }
 
   const cloudinaryReady =
@@ -124,14 +131,14 @@ router.post("/add", upload.array("images", 10), async (req, res) => {
     const newProduit = new Produit({
       name,
       description,
-      quantite: Number(quantite),
-      prixAchat: Number(prixAchat),
-      prixVente: Number(prixVente),
+      quantite: quantiteValue,
+      prixAchat: prixAchatValue,
+      prixVente: prixVenteValue,
       venteParGros,
       prixVenteGros: venteParGros ? prixVenteGros : null,
       uniteGros: uniteGros || null,
-      unite,
-      categorie,
+      unite: uniteValue,
+      categorie: categorieValue,
       images
     });
 

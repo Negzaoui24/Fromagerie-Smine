@@ -23,8 +23,33 @@ function Home() {
     return legacyVideo ? { kind: "video", src: legacyVideo, name: "video" } : null;
   });
   const token = localStorage.getItem("token");
+  const [showPriceHome, setShowPriceHome] = useState(() => {
+    try {
+      const raw = localStorage.getItem("adminSettings");
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed?.showPriceHome !== false;
+    } catch (err) {
+      return true;
+    }
+  });
   const productsSectionRef = useRef(null);
   const contactSectionRef = useRef(null);
+
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key === "adminSettings") {
+        try {
+          const parsed = event.newValue ? JSON.parse(event.newValue) : null;
+          setShowPriceHome(parsed?.showPriceHome !== false);
+        } catch (err) {
+          setShowPriceHome(true);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -243,7 +268,7 @@ function Home() {
                   <div className="card-img-top card-visual-cream" aria-hidden="true" />
                 )}
                 <h3 className="card-title">{product.name}</h3>
-                <p className="card-text">Prix: {product.prixVente} DT</p>
+                {showPriceHome && <p className="card-text">Prix: {product.prixVente} DT</p>}
                 {product.description && <p className="card-text">{product.description}</p>}
               </article>
             ))}
