@@ -18,6 +18,7 @@ let isMongoConnected = false;
 // Pour analyser le corps des requêtes HTTP (JSON)
 app.use(express.json());
 
+// Configuration CORS
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
@@ -26,14 +27,32 @@ const allowedOrigins = [
   "http://127.0.0.1:3001",
   "http://127.0.0.1:3002"
 ];
+
+// Ajouter les domaines Vercel
+if (process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 if (process.env.CLIENT_URL && !allowedOrigins.includes(process.env.CLIENT_URL)) {
   allowedOrigins.push(process.env.CLIENT_URL);
 }
 
+console.log("📋 CORS Origins configurés:", allowedOrigins);
+
 // Autoriser le partage de ressources (CORS) avec envoi de cookies
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function(origin, callback) {
+      // Permettre les requêtes sans origin (comme les requêtes mobiles)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn("❌ CORS rejected origin:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true
   })
 );
