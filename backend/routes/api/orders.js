@@ -2,6 +2,8 @@ const router = require("express").Router();
 const authMiddleware = require("../../middleware/authMiddleware");
 const Order = require("../../models/Order");
 const User = require("../../models/User");
+const Notification = require("../../models/Notification");
+const { sendWhatsAppMessage } = require("../../utils/whatsapp");
 
 const normalizeRole = (role) => String(role || "").toLowerCase();
 const isAdminRole = (role) => ["admin", "super_admin"].includes(normalizeRole(role));
@@ -51,8 +53,10 @@ const buildOrder = async ({
   
   // Populate après save 
   const populatedOrder = await Order.findById(savedOrder._id)
-    .populate("commercial", "username email")
+    .populate("commercial", "username email phone")
     .populate("createdBy", "username email");
+
+  await createOrderNotifications(populatedOrder);
   
   return populatedOrder;
 };
@@ -63,6 +67,133 @@ const validateOrderPayload = (payload) => {
     return false;
   }
   return true;
+};
+
+const createOrderNotifications = async (order) => {
+  const notifications = [];
+  const commercialRecipient = order.commercial;
+  const orderLabel = `Commande #${order._id}`;
+
+  if (commercialRecipient) {
+    notifications.push({
+      recipient: commercialRecipient._id,
+      title: "Nouvelle commande assignée",
+      message: `Une nouvelle commande a été passée pour ${order.customerName}.`,
+      data: {
+        orderId: order._id,
+        commercialId: commercialRecipient._id,
+        customerEmail: order.customerEmail
+      }
+    });
+  }
+
+  const admins = await User.find({ role: { $in: ["admin", "super_admin"] } }).select("_id username email phone");
+  admins.forEach((admin) => {
+    notifications.push({
+      recipient: admin._id,
+      title: "Nouvelle commande client",
+      message: `${orderLabel} a été passée par ${order.customerName}.`,
+      data: {
+        orderId: order._id,
+        commercialId: commercialRecipient ? commercialRecipient._id : null
+      }
+    });
+  });
+
+  if (notifications.length > 0) {
+    await Notification.insertMany(notifications);
+  }
+
+  const whatsappPromises = [];
+  if (commercialRecipient?.phone) {
+    whatsappPromises.push(
+      sendWhatsAppMessage({
+        recipientPhone: commercialRecipient.phone,
+        body: `Nouvelle commande ${orderLabel} pour ${order.customerName}. Merci de vérifier votre tableau de bord.`
+      })
+    );
+  }
+
+  admins.forEach((admin) => {
+    if (admin.phone) {
+      whatsappPromises.push(
+        sendWhatsAppMessage({
+          recipientPhone: admin.phone,
+          body: `Nouvelle commande ${orderLabel} passée pour ${order.customerName}. Connectez-vous pour voir les détails.`
+        })
+      );
+    }
+  });
+
+  if (whatsappPromises.length > 0) {
+    await Promise.allSettled(whatsappPromises);
+  }
+};
+
+const createOrderValidationNotifications = async (order) => {
+  const notifications = [];
+  const commercialRecipient = order.commercial;
+  const orderLabel = `Commande #${order._id}`;
+
+  // Notification et WhatsApp pour le commercial
+  if (commercialRecipient) {
+    notifications.push({
+      recipient: commercialRecipient._id,
+      title: "Commande validée",
+      message: `La commande ${orderLabel} pour ${order.customerName} a été validée.`,
+      data: {
+        orderId: order._id,
+        commercialId: commercialRecipient._id,
+        status: "confirmed"
+      }
+    });
+  }
+
+  // Notifications et WhatsApp pour les admins
+  const admins = await User.find({ role: { $in: ["admin", "super_admin"] } }).select("_id username email phone");
+  admins.forEach((admin) => {
+    notifications.push({
+      recipient: admin._id,
+      title: "Commande validée",
+      message: `La commande ${orderLabel} pour ${order.customerName} a été confirmée.`,
+      data: {
+        orderId: order._id,
+        status: "confirmed"
+      }
+    });
+  });
+
+  // Sauvegarder les notifications
+  if (notifications.length > 0) {
+    await Notification.insertMany(notifications);
+  }
+
+  // Envoyer les messages WhatsApp
+  const whatsappPromises = [];
+  
+  if (commercialRecipient?.phone) {
+    whatsappPromises.push(
+      sendWhatsAppMessage({
+        recipientPhone: commercialRecipient.phone,
+        body: `✅ Commande validée: ${orderLabel} pour ${order.customerName} a été confirmée. Veuillez procéder au traitement.`
+      })
+    );
+  }
+
+  admins.forEach((admin) => {
+    if (admin.phone) {
+      whatsappPromises.push(
+        sendWhatsAppMessage({
+          recipientPhone: admin.phone,
+          body: `✅ Commande confirmée: ${orderLabel} passée par ${order.customerName} a été validée.`
+        })
+      );
+    }
+  });
+
+  if (whatsappPromises.length > 0) {
+    await Promise.allSettled(whatsappPromises);
+  }
 };
 
 router.post("/", authMiddleware, async (req, res) => {
@@ -113,6 +244,10 @@ router.post("/client", authMiddleware, async (req, res) => {
       ...req.body,
       createdById: req.user.id
     });
+    
+    // Envoyer les notifications et messages WhatsApp au commercial et aux admins
+    await createOrderValidationNotifications(order);
+    
     return res.status(201).json({ status: "ok", order });
   } catch (err) {
     console.error("Erreur creation commande client gros:", err);
@@ -208,11 +343,17 @@ router.patch("/:id/status", authMiddleware, async (req, res) => {
       return res.status(404).json({ status: "notok", msg: "Commande non trouvee." });
     }
 
+    const oldStatus = order.status;
     order.status = status;
     await order.save();
     const populatedOrder = await Order.findById(order._id)
-      .populate("commercial", "username email")
+      .populate("commercial", "username email phone")
       .populate("createdBy", "username email");
+
+    // Envoyer les notifications et messages WhatsApp si la commande est validée
+    if (status === "confirmed" && oldStatus !== "confirmed") {
+      await createOrderValidationNotifications(populatedOrder);
+    }
 
     return res.status(200).json({
       status: "ok",

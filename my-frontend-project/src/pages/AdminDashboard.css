@@ -458,6 +458,17 @@
   box-shadow: 0 12px 24px rgba(92, 58, 30, 0.08);
 }
 
+.admin-order-card-highlight {
+  border-color: #f7b32b;
+  box-shadow: 0 0 0 3px rgba(247, 179, 43, 0.22);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-order-card-focused {
+  border-color: #f7b32b !important;
+  box-shadow: 0 0 0 4px rgba(247, 179, 43, 0.26) !important;
+}
+
 .admin-order-meta {
   display: flex;
   justify-content: space-between;

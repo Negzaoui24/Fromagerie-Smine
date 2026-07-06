@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import api from "../api";
 import "./Home.css";
 
 function SocialIcon({ type }) {
@@ -41,7 +42,11 @@ function Navbar({ space }) {
   const name = localStorage.getItem("name");
   const token = localStorage.getItem("token");
   const [menuOpen, setMenuOpen] = useState(false);
-  const whatsappUrl = "https://wa.me/21620344677";
+  const [notifications, setNotifications] = useState([]);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [notificationError, setNotificationError] = useState("");
+  const whatsappUrl = "https://wa.me/21623463048";
 
   const currentSpace =
     space ||
@@ -71,6 +76,42 @@ function Navbar({ space }) {
     localStorage.removeItem("email");
     localStorage.removeItem("role");
     navigate("/login");
+  };
+
+  const fetchNotifications = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+
+    setLoadingNotifications(true);
+    setNotificationError("");
+    try {
+      const response = await api.get("/notifications");
+      setNotifications(response.data.notifications || []);
+    } catch (error) {
+      console.error("Erreur chargement notifications:", error);
+      setNotificationError("Impossible de charger les notifications. Vérifiez le serveur ou le token utilisateur.");
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token && isAdminSpace) {
+      fetchNotifications();
+    }
+  }, [token, isAdminSpace, fetchNotifications]);
+
+  const handleNotificationClick = async (notification) => {
+    await markNotificationRead(notification._id);
+    setNotificationOpen(false);
+
+    const orderId = notification.data?.orderId;
+    if (orderId) {
+      navigate(`/admin/dashboard?panel=orders&orderId=${orderId}`);
+    } else {
+      navigate("/admin/dashboard?panel=orders");
+    }
   };
 
   const brandTarget = isAdminSpace
@@ -145,6 +186,36 @@ function Navbar({ space }) {
     goToLogin();
   };
 
+  const markNotificationRead = async (id) => {
+    try {
+      await api.patch(`/notifications/${id}/read`);
+      setNotifications((items) =>
+        items.map((item) => (item._id === id ? { ...item, read: true } : item))
+      );
+    } catch (error) {
+      console.error("Erreur marquage notification lue:", error);
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    try {
+      await api.patch("/notifications/read-all");
+      setNotifications((items) => items.map((item) => ({ ...item, read: true })));
+    } catch (error) {
+      console.error("Erreur marquage toutes notifications lues:", error);
+    }
+  };
+
+  const handleToggleNotifications = () => {
+    setNotificationOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        fetchNotifications();
+      }
+      return next;
+    });
+  };
+
   if (isGrosSpace) {
     return (
       <header className="site-navbar gros-navbar">
@@ -214,6 +285,61 @@ function Navbar({ space }) {
               ? "Vente en gros - Connexion clients"
               : "Bienvenue a Fromagerie Smine"}
         </span>
+        {token && isAdminSpace && (
+          <div className="notification-wrapper">
+            <button
+              type="button"
+              className="notification-button"
+              onClick={handleToggleNotifications}
+              aria-label="Afficher les notifications"
+            >
+              <BellIcon />
+              {notifications.filter((item) => !item.read).length > 0 && (
+                <span className="notification-badge">
+                  {notifications.filter((item) => !item.read).length}
+                </span>
+              )}
+            </button>
+            {notificationOpen && (
+              <div className="notification-dropdown notification-panel">
+                <div className="notification-panel-header">
+                  <strong>Notifications</strong>
+                  <button
+                    type="button"
+                    className="notification-mark-all"
+                    onClick={markAllNotificationsRead}
+                  >
+                    Tout lire
+                  </button>
+                </div>
+                {notificationError && (
+                  <div className="notification-error">{notificationError}</div>
+                )}
+                {loadingNotifications && <div className="notification-empty">Chargement...</div>}
+                {!loadingNotifications && !notificationError && notifications.length === 0 && (
+                  <div className="notification-empty">Aucune notification.</div>
+                )}
+                {!loadingNotifications && !notificationError && notifications.map((item) => (
+                  <button
+                    key={item._id}
+                    type="button"
+                    className={`notification-item ${item.read ? "read" : "unread"}`}
+                    onClick={() => handleNotificationClick(item)}
+                  >
+                    <div className="notification-title">{item.title}</div>
+                    <div className="notification-message">{item.message}</div>
+                    <div className="notification-time">
+                      {new Date(item.createdAt).toLocaleString("fr-FR", {
+                        dateStyle: "short",
+                        timeStyle: "short"
+                      })}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {!token && (
           <button
             type="button"
@@ -317,6 +443,17 @@ function CartIcon() {
       <path
         fill="currentColor"
         d="M8 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-9.7-3.2h10.9c.7 0 1.3-.4 1.5-1l2.2-6.3a.8.8 0 0 0-.8-1.1H6.2L5.6 3.8A1.6 1.6 0 0 0 4 2.6H2.8a.8.8 0 0 0 0 1.6H4l2.4 10.1a1.6 1.6 0 0 0 1.6 1.3Z"
+      />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="social-icon-svg">
+      <path
+        fill="currentColor"
+        d="M12 2a5 5 0 0 1 5 5v3.04c0 .67.18 1.32.52 1.89l.99 1.78a1 1 0 0 1-.86 1.49H5.35a1 1 0 0 1-.86-1.49l.99-1.78A3.98 3.98 0 0 0 7 10.04V7a5 5 0 0 1 5-5Zm-2 20a2 2 0 0 0 4 0h-4Z"
       />
     </svg>
   );

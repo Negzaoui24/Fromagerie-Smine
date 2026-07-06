@@ -21,8 +21,6 @@ import {
   ListItemAvatar,
   Avatar,
   ListItemText,
-  Card,
-  CardContent,
   useMediaQuery,
   useTheme
 } from "@mui/material";

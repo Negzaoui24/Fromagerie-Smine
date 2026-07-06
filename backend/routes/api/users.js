@@ -2,6 +2,7 @@ const router = require("express").Router();
 const bcrypt = require("bcryptjs");
 const config = require("config");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const User = require("../../models/User");
 const authMiddleware=require("../../middleware/authMiddleware")
 const SUPER_ADMIN_EMAILS = [
@@ -241,19 +242,45 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Vérifier que les identifiants sont fournis
+    if (!email || !password) {
+      return res.status(400).json({ 
+        message: "Email et mot de passe requis", 
+        msg: "Email et mot de passe requis" 
+      });
+    }
+
+    // Vérifier la connexion MongoDB
+    if (mongoose.connection.readyState !== 1) {
+      console.warn("⚠️  MongoDB pas connecté (state: " + mongoose.connection.readyState + "), tentative de reconnexion...");
+      return res.status(503).json({ 
+        message: "Service temporairement indisponible", 
+        msg: "Veuillez réessayer dans quelques secondes" 
+      });
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Utilisateur non trouvé", msg: "Utilisateur non trouvé" });
+      return res.status(400).json({ 
+        message: "Utilisateur non trouvé", 
+        msg: "Utilisateur non trouvé" 
+      });
     }
 
     const accountStatus = user.accountStatus || "approved";
     if (accountStatus !== "approved") {
-      return res.status(403).json({ message: "Compte non approuve", msg: accountStatus === "rejected" ? "Votre demande a ete refusee." : "Votre compte est en attente d'approbation par un administrateur." });
+      return res.status(403).json({ 
+        message: "Compte non approuve", 
+        msg: accountStatus === "rejected" ? "Votre demande a ete refusee." : "Votre compte est en attente d'approbation par un administrateur." 
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Mot de passe incorrect", msg: "Mot de passe incorrect" });
+      return res.status(400).json({ 
+        message: "Mot de passe incorrect", 
+        msg: "Mot de passe incorrect" 
+      });
     }
 
     const token = jwt.sign(
@@ -285,7 +312,12 @@ router.post("/login", async (req, res) => {
       role: user.role,
     });
   } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", msg: "Erreur serveur" });
+    console.error("❌ Erreur login:", err.message);
+    console.error("Stack:", err.stack);
+    res.status(500).json({ 
+      message: "Erreur serveur", 
+      msg: "Erreur serveur: " + err.message 
+    });
   }
 });
 

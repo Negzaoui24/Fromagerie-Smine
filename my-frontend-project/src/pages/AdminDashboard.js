@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import api, { buildApiUrl } from "../api";
 import CategoryManager from "./CategoryManager";
 import ProductManager from "./ProductManager";
@@ -70,6 +70,7 @@ function AdminDashboard() {
     if (isCommercialUser) return panels.filter(panel => panel.id === "orders");
     return [];
   }, [canCreateAdmin, isCommercialUser]);
+  const [searchParams] = useSearchParams();
   const [activePanel, setActivePanel] = useState(() => {
     // Pour utilisateurs commerciaux, afficher le panneau des ordres par défaut
     if (isCommercialUser) {
@@ -129,6 +130,9 @@ function AdminDashboard() {
   const [commercials, setCommercials] = useState([]);
   const [commercialsLoading, setCommercialsLoading] = useState(false);
 
+  const orderRefs = useRef({});
+  const [highlightOrderId, setHighlightOrderId] = useState(null);
+
   // Ref pour scroller vers la section du contenu
   const contentPanelRef = useRef(null);
 
@@ -138,6 +142,34 @@ function AdminDashboard() {
       contentPanelRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [activePanel]);
+
+  useEffect(() => {
+    const panelParam = searchParams.get("panel");
+    const orderIdParam = searchParams.get("orderId");
+
+    if (panelParam === "orders" && canViewOrders) {
+      setActivePanel("orders");
+    }
+    if (orderIdParam) {
+      setHighlightOrderId(orderIdParam);
+    }
+  }, [searchParams, canViewOrders]);
+
+  useEffect(() => {
+    if (activePanel !== "orders" || !highlightOrderId || orders.length === 0) {
+      return;
+    }
+
+    const highlightedElement = orderRefs.current[highlightOrderId];
+    if (highlightedElement) {
+      highlightedElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      highlightedElement.classList.add("admin-order-card-focused");
+      const timer = setTimeout(() => {
+        highlightedElement.classList.remove("admin-order-card-focused");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [activePanel, highlightOrderId, orders]);
 
   useEffect(() => {
     const handleStorage = (event) => {
@@ -919,7 +951,15 @@ function AdminDashboard() {
           ) : (
             <div className="admin-orders-grid">
               {filteredOrders.map((order) => (
-                <article key={order._id} className="admin-order-card">
+                    <article
+                      key={order._id}
+                      ref={(node) => {
+                        if (node) {
+                          orderRefs.current[order._id] = node;
+                        }
+                      }}
+                      className={`admin-order-card${order._id === highlightOrderId ? " admin-order-card-highlight" : ""}`}
+                    >
                   <div className="admin-order-meta">
                     <h3>{order.customerName}</h3>
                     <span className={`admin-order-status admin-order-status-${order.status || "pending"}`}>
