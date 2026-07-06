@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api";
 import { resolveMediaUrl } from "../config/media";
+import useClientHeroMedia from "../hooks/useClientHeroMedia";
 import "./gros.css";
 
 const categoryAccents = ["gold", "cream", "copper"];
@@ -42,14 +43,7 @@ function GrosPage() {
     }
   });
   const [activeView, setActiveView] = useState("catalog");
-  const [clientHeroMedia, setClientHeroMedia] = useState(() => {
-    const savedMedia = localStorage.getItem("clientHeroMedia");
-    if (savedMedia) {
-      return JSON.parse(savedMedia);
-    }
-    const legacyVideo = localStorage.getItem("clientHeroVideo");
-    return legacyVideo ? { kind: "video", src: legacyVideo, name: "video" } : null;
-  });
+  const { clientHeroMedia, setClientHeroMedia } = useClientHeroMedia();
   const viewSections = {
     catalog: "products",
     cart: "cart",
@@ -336,16 +330,6 @@ function GrosPage() {
   useEffect(() => {
     fetchGrosOrders();
   }, [fetchGrosOrders]);
-
-  useEffect(() => {
-    const savedMedia = localStorage.getItem("clientHeroMedia");
-    if (savedMedia) {
-      setClientHeroMedia(JSON.parse(savedMedia));
-      return;
-    }
-    const legacyVideo = localStorage.getItem("clientHeroVideo");
-    setClientHeroMedia(legacyVideo ? { kind: "video", src: legacyVideo, name: "video" } : null);
-  }, []);
 
   useEffect(() => {
     if (commercialOptions.length && !selectedCommercialId) {

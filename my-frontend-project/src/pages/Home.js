@@ -2,26 +2,19 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../api";
 import { resolveMediaUrl } from "../config/media";
+import useClientHeroMedia from "../hooks/useClientHeroMedia";
 import "./Home.css";
 
 const categoryAccents = ["gold", "cream", "copper"];
 
 function Home() {
   const location = useLocation();
+  const { clientHeroMedia, setClientHeroMedia } = useClientHeroMedia();
   const [message, setMessage] = useState("");
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const [clientHeroMedia, setClientHeroMedia] = useState(() => {
-    const savedMedia = localStorage.getItem("clientHeroMedia");
-    if (savedMedia) {
-      return JSON.parse(savedMedia);
-    }
-
-    const legacyVideo = localStorage.getItem("clientHeroVideo");
-    return legacyVideo ? { kind: "video", src: legacyVideo, name: "video" } : null;
-  });
   const token = localStorage.getItem("token");
   const [showPriceHome, setShowPriceHome] = useState(() => {
     try {
@@ -80,18 +73,6 @@ function Home() {
     };
 
     fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    const savedMedia = localStorage.getItem("clientHeroMedia");
-
-    if (savedMedia) {
-      setClientHeroMedia(JSON.parse(savedMedia));
-      return;
-    }
-
-    const legacyVideo = localStorage.getItem("clientHeroVideo");
-    setClientHeroMedia(legacyVideo ? { kind: "video", src: legacyVideo, name: "video" } : null);
   }, []);
 
   useEffect(() => {

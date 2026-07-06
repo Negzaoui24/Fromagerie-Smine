@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api, { buildApiUrl } from "../api";
 import { resolveMediaUrl } from "../config/media";
+import useClientHeroMedia from "../hooks/useClientHeroMedia";
 import "./ClientDashboard.css";
 
 const CATEGORY_URL = buildApiUrl("/categories");
@@ -10,25 +11,13 @@ const categoryAccents = ["gold", "cream", "copper"];
 
 function ClientDashboard() {
   const location = useLocation();
+  const { clientHeroMedia: heroMedia } = useClientHeroMedia();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedCat, setSelectedCat] = useState(location.state?.selectedCategoryId || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [heroMedia, setHeroMedia] = useState(null);
-
-  useEffect(() => {
-    const storedHero = localStorage.getItem("clientHeroMedia");
-    if (storedHero) {
-      try {
-        setHeroMedia(JSON.parse(storedHero));
-      } catch (err) {
-        console.warn("Impossible de parser clientHeroMedia:", err);
-        setHeroMedia(null);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (location.state?.selectedCategoryId) {
