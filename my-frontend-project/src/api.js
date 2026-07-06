@@ -9,10 +9,12 @@ if (!API_BASE_URL) {
     const hostname = window.location.hostname;
     const isProduction = process.env.NODE_ENV === "production" || !hostname.includes("localhost");
     
-    if (isProduction && hostname.includes("fromagerie")) {
-      // En production sur Vercel, utiliser le même domaine
-      // Le backend est déployé sur un domaine different, donc on devra configurer REACT_APP_API_URL
-      API_BASE_URL = "https://fromagerie-backend-git-main-negzaoui24.vercel.app"; // À mettre à jour avec le vrai domaine backend
+    if (isProduction && hostname.includes("vercel")) {
+      // En production sur Vercel, utiliser le backend Vercel
+      API_BASE_URL = "https://fromagerie-smine-swart.vercel.app";
+    } else if (isProduction && hostname.includes("fromagerie")) {
+      // Autres domaines de production
+      API_BASE_URL = process.env.REACT_APP_API_URL || "https://fromagerie-smine-swart.vercel.app";
     } else {
       // En développement local
       API_BASE_URL = "http://localhost:5000";
