@@ -22,11 +22,11 @@ export const useClientHeroMedia = () => {
   });
 
   useEffect(() => {
-    // Si pas de vidéo, charger la vidéo par défaut
+    // Si pas de vidéo, charger la vidéo par défaut depuis Cloudinary
     if (!clientHeroMedia) {
       const defaultHero = {
         kind: "video",
-        src: "/videoHero.mp4",
+        src: "https://res.cloudinary.com/davdhrcwz/video/upload/v1783335288/SnapSave_App_4496105043840517_1080p_uyuv7x.mp4",
         name: "videoHero"
       };
       setClientHeroMedia(defaultHero);
