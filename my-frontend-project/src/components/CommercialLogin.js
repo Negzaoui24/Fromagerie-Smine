@@ -24,12 +24,11 @@ const CommercialLogin = () => {
     setMessage("");
     try {
       const response = await api.post(
-        buildApiUrl("/users/login"),
+        "/users/login",
         {
           email: formData.email,
           password: formData.password
-        },
-        { withCredentials: true }
+        }
       );
       if (response.data.role !== "commercial") {
         setMessageType("error");

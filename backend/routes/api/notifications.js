@@ -2,13 +2,9 @@ const router = require("express").Router();
 const authMiddleware = require("../../middleware/authMiddleware");
 const Notification = require("../../models/Notification");
 const mongoose = require("mongoose");
-const fs = require("fs");
-
 const log = (msg) => {
   const timestamp = new Date().toISOString();
-  const logEntry = `[${timestamp}] ${msg}\n`;
-  fs.appendFileSync("./notifications-debug.log", logEntry);
-  console.log(msg);
+  console.log(`[${timestamp}] ${msg}`);
 };
 
 router.get("/", authMiddleware, async (req, res) => {

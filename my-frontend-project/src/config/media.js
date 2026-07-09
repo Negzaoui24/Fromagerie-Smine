@@ -1,4 +1,4 @@
-import { buildApiUrl } from "./api";
+import { API_BASE_URL } from "./api";
 
 export const resolveMediaUrl = (path) => {
   if (!path) {
@@ -9,5 +9,5 @@ export const resolveMediaUrl = (path) => {
     return path;
   }
 
-  return buildApiUrl(path);
+  return `${API_BASE_URL}${path}`;
 };

@@ -23,10 +23,10 @@ const GrosLogin = () => {
     setIsSubmitting(true);
     setMessage("");
     try {
-      const response = await api.post(buildApiUrl("/users/login"), {
+      const response = await api.post("/users/login", {
         email: formData.email,
         password: formData.password
-      }, { withCredentials: true });
+      });
       if (response.data.role !== "user") {
         setMessageType("error");
         setMessage("Cette interface est réservée aux clients commerciaux.");

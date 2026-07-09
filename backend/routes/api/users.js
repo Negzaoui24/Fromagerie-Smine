@@ -268,6 +268,7 @@ router.post("/login", async (req, res) => {
     }
 
     const accountStatus = user.accountStatus || "approved";
+    console.log(`[login] User account status: ${accountStatus}`);
     if (accountStatus !== "approved") {
       return res.status(403).json({ 
         message: "Compte non approuve", 
@@ -292,7 +293,7 @@ router.post("/login", async (req, res) => {
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
       path: "/"
     };

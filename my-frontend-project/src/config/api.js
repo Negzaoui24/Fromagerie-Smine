@@ -1,1 +1,1 @@
-export { default, buildApiUrl } from "../api";
+export { default, API_BASE_URL, buildApiUrl } from "../api";

@@ -65,7 +65,7 @@ const Login = () => {
         setMessage("");
 
         try {
-            const res = await api.post(buildApiUrl("/users/login"), formData, { withCredentials: true });
+            const res = await api.post("/users/login", formData);
             const roleRaw = res.data.role || "";
             const role = String(roleRaw).toLowerCase().trim();
             const token = res.data.token;

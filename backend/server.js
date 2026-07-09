@@ -13,12 +13,10 @@ const commercialClients = require("./routes/api/commercialClients");
 const orders = require("./routes/api/orders");
 const notifications = require("./routes/api/notifications");
 const app = express();
-let isMongoConnected = false;
 
 // Pour analyser le corps des requêtes HTTP (JSON)
 app.use(express.json());
 
-// Configuration CORS
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
@@ -27,32 +25,14 @@ const allowedOrigins = [
   "http://127.0.0.1:3001",
   "http://127.0.0.1:3002"
 ];
-
-// Ajouter les domaines Vercel
-if (process.env.VERCEL_URL) {
-  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
-}
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
-}
 if (process.env.CLIENT_URL && !allowedOrigins.includes(process.env.CLIENT_URL)) {
   allowedOrigins.push(process.env.CLIENT_URL);
 }
 
-console.log("📋 CORS Origins configurés:", allowedOrigins);
-
 // Autoriser le partage de ressources (CORS) avec envoi de cookies
 app.use(
   cors({
-    origin: function(origin, callback) {
-      // Permettre les requêtes sans origin (comme les requêtes mobiles)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn("❌ CORS rejected origin:", origin);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigins,
     credentials: true
   })
 );
@@ -62,17 +42,6 @@ app.get("/", (req, res) => {
   res.status(200).json({ status: "ok", message: "API Express fonctionne correctement" });
 });
 
-// Route de diagnostic
-app.get("/health", (req, res) => {
-  res.status(200).json({ 
-    status: "ok", 
-    message: "Serveur en ligne",
-    mongodb: isMongoConnected ? "✅ Connecté" : "❌ Non connecté",
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || "development"
-  });
-});
-
 // Servir les fichiers statiques (images) uniquement en local (Vercel: FS éphémère)
 if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
   app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -80,35 +49,48 @@ if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
 
 // Connexion à MongoDB
 const mongo_url = process.env.MONGO_URL || process.env.MONGODB_URI || (config.has && config.has("mongo_url") ? config.get("mongo_url") : "mongodb://localhost:27017/fromagerie_db");
+console.log("MongoDB connection URL:", mongo_url);
 mongoose.set("strictQuery", true);
 
-const connectToDatabase = async () => {
-    if (isMongoConnected) {
-        return;
-    }
+// Cache de connexion pour environnement serverless (survit entre invocations "chaudes")
+let cached = global.mongooseConnection;
+if (!cached) {
+  cached = global.mongooseConnection = { conn: null, promise: null };
+}
 
-    try {
-      await mongoose.connect(mongo_url, {
-        retryWrites: true,
-        w: "majority",
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000
-      });
-      isMongoConnected = true;
-      console.log("✅ MongoDB connected...");
-    } catch (err) {
-      console.error("❌ MongoDB connection error:", err.message);
-      isMongoConnected = false;
-      throw err;
-    }
+const connectToDatabase = async () => {
+  if (cached.conn) {
+    return cached.conn;
+  }
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(mongo_url, {
+      serverSelectionTimeoutMS: 5000,
+    }).then((mongooseInstance) => {
+      console.log("MongoDB connected...");
+      return mongooseInstance;
+    });
+  }
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null;
+    throw err;
+  }
+  return cached.conn;
 };
 
-connectToDatabase().catch((err) => {
-  console.error("Erreur connexion initiale MongoDB:", err.message);
-  // Ne pas quitter, laisser les endpoints essayer de se reconnecter
+// Middleware qui garantit la connexion AVANT de traiter chaque requête
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (err) {
+    console.error("Erreur connexion MongoDB:", err.message);
+    res.status(503).json({ status: "error", msg: "Service temporairement indisponible." });
+  }
 });
 
-// Port du serveur
+// Routes
 app.use("/users", users);
 app.use("/categories", categories);
 app.use("/produits", products);

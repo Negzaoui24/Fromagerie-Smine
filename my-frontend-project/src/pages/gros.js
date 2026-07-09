@@ -399,6 +399,7 @@ function GrosPage() {
           <p>
             Decouvrez notre selection exclusive de fromages artisanaux en gros,
             preparees avec soin pour offrir qualite, fraicheur et saveur authentique.
+            qqqqqqqqqqqqqqqq
           </p>
           <button
             className="commercial-btn commercial-welcome-btn"

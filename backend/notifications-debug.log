@@ -1,0 +1,75 @@
+[2026-07-08T12:28:26.972Z] [notifications] GET /
+[2026-07-08T12:28:26.975Z] [notifications] req.user: {"id":"6a4e36c99183da8650c9c12a","name":"louay","role":"admin","iat":1783513706,"exp":1783516298}
+[2026-07-08T12:28:26.978Z] [notifications] req.user.id: 6a4e36c99183da8650c9c12a Type: string
+[2026-07-08T12:28:26.982Z] [notifications] Converted userId: 6a4e36c99183da8650c9c12a
+[2026-07-08T12:28:26.991Z] [notifications] Found notifications: 1
+[2026-07-08T12:28:30.429Z] [notifications] GET /
+[2026-07-08T12:28:30.433Z] [notifications] req.user: {"id":"6a4e36c99183da8650c9c12a","name":"louay","role":"admin","iat":1783513706,"exp":1783516298}
+[2026-07-08T12:28:30.463Z] [notifications] req.user.id: 6a4e36c99183da8650c9c12a Type: string
+[2026-07-08T12:28:30.464Z] [notifications] Converted userId: 6a4e36c99183da8650c9c12a
+[2026-07-08T12:28:30.470Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:01.822Z] [notifications] GET /
+[2026-07-08T12:34:01.826Z] [notifications] req.user: {"id":"6a4e36c99183da8650c9c12a","name":"louay","role":"admin","iat":1783513706,"exp":1783516298}
+[2026-07-08T12:34:01.830Z] [notifications] req.user.id: 6a4e36c99183da8650c9c12a Type: string
+[2026-07-08T12:34:01.833Z] [notifications] Converted userId: 6a4e36c99183da8650c9c12a
+[2026-07-08T12:34:01.840Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:14.007Z] [notifications] GET /
+[2026-07-08T12:34:14.011Z] [notifications] req.user: {"id":"6a4e36c99183da8650c9c12a","name":"louay","role":"admin","iat":1783513706,"exp":1783516298}
+[2026-07-08T12:34:14.013Z] [notifications] req.user.id: 6a4e36c99183da8650c9c12a Type: string
+[2026-07-08T12:34:14.015Z] [notifications] Converted userId: 6a4e36c99183da8650c9c12a
+[2026-07-08T12:34:14.022Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:25.513Z] [notifications] GET /
+[2026-07-08T12:34:25.514Z] [notifications] req.user: {"id":"6a4e3bd99183da8650c9c137","name":"test","role":"commercial","iat":1783514064,"exp":1783516656}
+[2026-07-08T12:34:25.516Z] [notifications] req.user.id: 6a4e3bd99183da8650c9c137 Type: string
+[2026-07-08T12:34:25.519Z] [notifications] Converted userId: 6a4e3bd99183da8650c9c137
+[2026-07-08T12:34:25.534Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:29.995Z] [notifications] GET /
+[2026-07-08T12:34:29.998Z] [notifications] req.user: {"id":"6a4e3bd99183da8650c9c137","name":"test","role":"commercial","iat":1783514064,"exp":1783516656}
+[2026-07-08T12:34:29.999Z] [notifications] req.user.id: 6a4e3bd99183da8650c9c137 Type: string
+[2026-07-08T12:34:30.001Z] [notifications] Converted userId: 6a4e3bd99183da8650c9c137
+[2026-07-08T12:34:30.007Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:34.514Z] [notifications] GET /
+[2026-07-08T12:34:34.519Z] [notifications] req.user: {"id":"6a4e3bd99183da8650c9c137","name":"test","role":"commercial","iat":1783514064,"exp":1783516656}
+[2026-07-08T12:34:34.523Z] [notifications] req.user.id: 6a4e3bd99183da8650c9c137 Type: string
+[2026-07-08T12:34:34.526Z] [notifications] Converted userId: 6a4e3bd99183da8650c9c137
+[2026-07-08T12:34:34.542Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:36.546Z] [notifications] GET /
+[2026-07-08T12:34:36.550Z] [notifications] req.user: {"id":"6a4e3bd99183da8650c9c137","name":"test","role":"commercial","iat":1783514064,"exp":1783516656}
+[2026-07-08T12:34:36.553Z] [notifications] req.user.id: 6a4e3bd99183da8650c9c137 Type: string
+[2026-07-08T12:34:36.556Z] [notifications] Converted userId: 6a4e3bd99183da8650c9c137
+[2026-07-08T12:34:36.569Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:40.209Z] [notifications] GET /
+[2026-07-08T12:34:40.211Z] [notifications] req.user: {"id":"6a4e3bd99183da8650c9c137","name":"test","role":"commercial","iat":1783514064,"exp":1783516656}
+[2026-07-08T12:34:40.221Z] [notifications] req.user.id: 6a4e3bd99183da8650c9c137 Type: string
+[2026-07-08T12:34:40.224Z] [notifications] Converted userId: 6a4e3bd99183da8650c9c137
+[2026-07-08T12:34:40.235Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:41.679Z] [notifications] GET /
+[2026-07-08T12:34:41.681Z] [notifications] req.user: {"id":"6a4e3bd99183da8650c9c137","name":"test","role":"commercial","iat":1783514064,"exp":1783516656}
+[2026-07-08T12:34:41.685Z] [notifications] req.user.id: 6a4e3bd99183da8650c9c137 Type: string
+[2026-07-08T12:34:41.687Z] [notifications] Converted userId: 6a4e3bd99183da8650c9c137
+[2026-07-08T12:34:41.694Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:47.457Z] [notifications] GET /
+[2026-07-08T12:34:47.461Z] [notifications] req.user: {"id":"6a4e36c99183da8650c9c12a","name":"louay","role":"admin","iat":1783514086,"exp":1783516678}
+[2026-07-08T12:34:47.464Z] [notifications] req.user.id: 6a4e36c99183da8650c9c12a Type: string
+[2026-07-08T12:34:47.467Z] [notifications] Converted userId: 6a4e36c99183da8650c9c12a
+[2026-07-08T12:34:47.475Z] [notifications] Found notifications: 1
+[2026-07-08T12:34:50.586Z] [notifications] GET /
+[2026-07-08T12:34:50.589Z] [notifications] req.user: {"id":"6a4e36c99183da8650c9c12a","name":"louay","role":"admin","iat":1783514086,"exp":1783516678}
+[2026-07-08T12:34:50.593Z] [notifications] req.user.id: 6a4e36c99183da8650c9c12a Type: string
+[2026-07-08T12:34:50.595Z] [notifications] Converted userId: 6a4e36c99183da8650c9c12a
+[2026-07-08T12:34:50.600Z] [notifications] Found notifications: 1
+[2026-07-08T12:35:02.783Z] [notifications] GET /
+[2026-07-08T12:35:02.790Z] [notifications] req.user: {"id":"6a4e3bd99183da8650c9c137","name":"test","role":"commercial","iat":1783514102,"exp":1783516694}
+[2026-07-08T12:35:02.797Z] [notifications] req.user.id: 6a4e3bd99183da8650c9c137 Type: string
+[2026-07-08T12:35:02.806Z] [notifications] Converted userId: 6a4e3bd99183da8650c9c137
+[2026-07-08T12:35:02.830Z] [notifications] Found notifications: 1
+[2026-07-08T12:35:08.108Z] [notifications] GET /
+[2026-07-08T12:35:08.109Z] [notifications] req.user: {"id":"6a4e3bd99183da8650c9c137","name":"test","role":"commercial","iat":1783514102,"exp":1783516694}
+[2026-07-08T12:35:08.110Z] [notifications] req.user.id: 6a4e3bd99183da8650c9c137 Type: string
+[2026-07-08T12:35:08.110Z] [notifications] Converted userId: 6a4e3bd99183da8650c9c137
+[2026-07-08T12:35:08.112Z] [notifications] Found notifications: 1
+[2026-07-08T12:35:14.815Z] [notifications] GET /
+[2026-07-08T12:35:14.825Z] [notifications] req.user: {"id":"6a4e3bd99183da8650c9c137","name":"test","role":"commercial","iat":1783514102,"exp":1783516694}
+[2026-07-08T12:35:14.828Z] [notifications] req.user.id: 6a4e3bd99183da8650c9c137 Type: string
+[2026-07-08T12:35:14.831Z] [notifications] Converted userId: 6a4e3bd99183da8650c9c137
+[2026-07-08T12:35:14.847Z] [notifications] Found notifications: 1
