@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api, { buildApiUrl } from "../api";
+import { subscribeToPush } from "../utils/pushNotifications";
 import CategoryManager from "./CategoryManager";
+import SubCategoryManager from "./SubCategoryManager";
 import ProductManager from "./ProductManager";
 import "./AdminDashboard.css";
 
@@ -16,6 +18,12 @@ const panels = [
     label: "Gerer categories",
     title: "Gestion des categories",
     description: "Ajoutez, modifiez et supprimez les categories."
+  },
+  {
+    id: "subcategories",
+    label: "Gerer sous-familles",
+    title: "Gestion des sous-familles",
+    description: "Ajoutez des sous-familles utilisées par les produits."
   },
   {
     id: "products",
@@ -129,6 +137,9 @@ function AdminDashboard() {
   const [selectedCommercialId, setSelectedCommercialId] = useState("");
   const [commercials, setCommercials] = useState([]);
   const [commercialsLoading, setCommercialsLoading] = useState(false);
+  const [pushStatus, setPushStatus] = useState("");
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushPending, setPushPending] = useState(false);
 
   const orderRefs = useRef({});
   const [highlightOrderId, setHighlightOrderId] = useState(null);
@@ -172,6 +183,10 @@ function AdminDashboard() {
   }, [activePanel, highlightOrderId, orders]);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setPushEnabled(Notification.permission === "granted");
+    }
+
     const handleStorage = (event) => {
       if (event.key === "adminSettings") {
         try {
@@ -539,9 +554,34 @@ function AdminDashboard() {
     }
   };
 
+  const handleEnablePushNotifications = async () => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      setPushStatus("Notifications push non supportées par ce navigateur.");
+      return;
+    }
+
+    setPushPending(true);
+    setPushStatus("");
+
+    try {
+      await subscribeToPush(buildApiUrl(""), localStorage.getItem("token") || "");
+      setPushEnabled(true);
+      setPushStatus("Notifications push activées. Vous recevrez les alertes de nouvelles commandes.");
+    } catch (error) {
+      console.error("Erreur activation push:", error);
+      setPushStatus("Impossible d'activer les notifications push. Vérifiez la console.");
+    } finally {
+      setPushPending(false);
+    }
+  };
+
   const renderPanelContent = () => {
     if (activePanel === "categories") {
       return <CategoryManager />;
+    }
+
+    if (activePanel === "subcategories") {
+      return <SubCategoryManager />;
     }
 
     if (activePanel === "products") {
@@ -1057,6 +1097,30 @@ function AdminDashboard() {
                 Commandes passées avec le commercial {currentUserName}.
               </p>
             </div>
+          )}
+          {!isCommercialUser && (
+            <div className="admin-hero-actions">
+              <button
+                type="button"
+                className="admin-primary-button"
+                onClick={() => setActivePanel("subcategories")}
+              >
+                Créer une sous-famille
+              </button>
+              <button
+                type="button"
+                className="admin-secondary-button"
+                onClick={handleEnablePushNotifications}
+                disabled={pushPending || pushEnabled}
+              >
+                {pushEnabled ? "Notifications push activées" : pushPending ? "Activation..." : "Activer notifications push"}
+              </button>
+            </div>
+          )}
+          {pushStatus && (
+            <p className="admin-hint" style={{ marginTop: 10 }}>
+              {pushStatus}
+            </p>
           )}
         </div>
       </section>

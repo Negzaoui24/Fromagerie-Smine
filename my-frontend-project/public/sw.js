@@ -23,11 +23,16 @@ const cacheFirst = async (request) => {
   if (cachedResponse) {
     return cachedResponse;
   }
-  const response = await fetch(request);
-  if (response && response.ok) {
-    cache.put(request, response.clone());
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    console.warn("cacheFirst: fetch a échoué pour", request.url, error);
+    return new Response("", { status: 503, statusText: "Service Unavailable" });
   }
-  return response;
 };
 
 const networkFirst = async (request, cacheName = CACHE_NAME) => {
@@ -122,4 +127,46 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {
+    title: "Nouvelle notification",
+    body: "Vous avez une nouvelle notification.",
+    icon: "/logo192.png",
+    data: { url: "/" }
+  };
+
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch (err) {
+      payload.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: payload.body,
+    icon: payload.icon || "/logo192.png",
+    badge: payload.badge || "/favicon.ico",
+    data: payload.data || { url: "/" },
+    vibrate: [100, 50, 100]
+  };
+
+  event.waitUntil(self.registration.showNotification(payload.title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ includeUncontrolled: true, type: "window" }).then((clientList) => {
+      const existingClient = clientList.find((client) => client.url === targetUrl);
+      if (existingClient) {
+        return existingClient.focus();
+      }
+      return self.clients.openWindow(targetUrl);
+    })
+  );
 });

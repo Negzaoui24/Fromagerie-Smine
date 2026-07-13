@@ -36,6 +36,7 @@ const API_URL = buildApiUrl("/produits");
 const ProductManager = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -44,6 +45,7 @@ const ProductManager = () => {
     prixVente: "",
     unite: "",
     categorieId: "",
+    sousCategorieId: "",
     images: [],
     venteParGros: false,
     prixVenteGros: "",
@@ -57,6 +59,7 @@ const ProductManager = () => {
     prixVente: "",
     unite: "",
     categorieId: "",
+    sousCategorieId: "",
     images: [],
     newImages: [],
     venteParGros: false,
@@ -173,6 +176,13 @@ const ProductManager = () => {
           delete errors.categorieId;
         }
         break;
+      case "sousCategorieId":
+        if (!value || value === "") {
+          errors.sousCategorieId = "La sous-famille est obligatoire";
+        } else {
+          delete errors.sousCategorieId;
+        }
+        break;
       default:
         break;
     }
@@ -234,9 +244,24 @@ const ProductManager = () => {
     }
   };
 
+  const fetchSubCategories = async () => {
+    try {
+      const { data } = await api.get(buildApiUrl("/subcategories"));
+      if (data.status === "ok" && data.subcategories) {
+        setSubCategories(data.subcategories);
+      } else {
+        setSubCategories([]);
+      }
+    } catch (err) {
+      console.error("Erreur chargement sous-familles:", err);
+      setSubCategories([]);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchSubCategories();
   }, []);
 
   const displayedProducts = products.filter((product) => {
@@ -247,6 +272,7 @@ const ProductManager = () => {
       product.name?.toLowerCase().includes(search) ||
       product.description?.toLowerCase().includes(search) ||
       product.categorie?.nom?.toLowerCase().includes(search) ||
+      product.sousCategorie?.nom?.toLowerCase().includes(search) ||
       product.unite?.toLowerCase().includes(search) ||
       product.uniteGros?.toLowerCase().includes(search) ||
       String(product.quantite).includes(search)
@@ -261,8 +287,8 @@ const ProductManager = () => {
       return;
     }
 
-    if (requireAllProductFields && (!form.quantite || !form.prixAchat || !form.prixVente || !form.unite || !form.categorieId)) {
-      setMessage({ text: "Veuillez remplir tous les champs (choisir une catégorie existante)", type: "error" });
+    if (!form.quantite || !form.prixAchat || !form.prixVente || !form.unite || !form.categorieId || !form.sousCategorieId) {
+      setMessage({ text: "Veuillez remplir tous les champs et sélectionner une catégorie et une sous-famille", type: "error" });
       return;
     }
 
@@ -282,6 +308,7 @@ const ProductManager = () => {
       formData.append('prixVente', form.prixVente);
       formData.append('unite', form.unite);
       formData.append('categorie', categorieId);
+      formData.append('sousCategorie', form.sousCategorieId);
       formData.append('venteParGros', form.venteParGros);
       formData.append('prixVenteGros', form.prixVenteGros || "");
       formData.append('uniteGros', form.uniteGros || "");
@@ -333,6 +360,7 @@ const ProductManager = () => {
       prixVente: product.prixVente || "",
       unite: product.unite || "",
       categorieId: product.categorie?._id || "",
+      sousCategorieId: product.sousCategorie?._id || "",
       images: product.images || [],
       newImages: [], // Pour les nouvelles images à ajouter
       venteParGros: product.venteParGros || false,
@@ -346,8 +374,8 @@ const ProductManager = () => {
   const handleUpdate = async () => {
     if (!editingId) return;
 
-    if (!editForm.name || !editForm.quantite || !editForm.prixAchat || !editForm.prixVente || !editForm.unite || !editForm.categorieId) {
-      setMessage({ text: "Veuillez remplir tous les champs (choisir une catégorie existante)", type: "error" });
+    if (!editForm.name || !editForm.quantite || !editForm.prixAchat || !editForm.prixVente || !editForm.unite || !editForm.categorieId || !editForm.sousCategorieId) {
+      setMessage({ text: "Veuillez remplir tous les champs et sélectionner une catégorie et une sous-famille", type: "error" });
       return;
     }
 
@@ -367,6 +395,7 @@ const ProductManager = () => {
       formData.append('prixVente', editForm.prixVente);
       formData.append('unite', editForm.unite);
       formData.append('categorie', categorieId);
+      formData.append('sousCategorie', editForm.sousCategorieId);
       formData.append('venteParGros', editForm.venteParGros);
       formData.append('prixVenteGros', editForm.prixVenteGros || "");
       formData.append('uniteGros', editForm.uniteGros || "");
@@ -783,7 +812,7 @@ const ProductManager = () => {
               fullWidth
               select
               SelectProps={{ native: true }}
-              label={requireAllProductFields ? "Catégorie *" : "Catégorie"}
+              label="Catégorie *"
               id="category-select"
               aria-label="Catégorie du produit"
               aria-describedby={formErrors.categorieId ? "categorieId-error" : undefined}
@@ -793,12 +822,7 @@ const ProductManager = () => {
                 validateField("categorieId", e.target.value);
               }}
               error={!!formErrors.categorieId}
-              helperText={
-                formErrors.categorieId ||
-                (requireAllProductFields
-                  ? "Sélectionnez ou créez une catégorie"
-                  : "Optionnel si seuls le nom et la catégorie sont requis")
-              }
+              helperText={formErrors.categorieId || "Sélectionnez une catégorie"}
               variant="outlined"
               size="medium"
               sx={{ minHeight: isMobile ? 56 : "auto" }}
@@ -807,6 +831,32 @@ const ProductManager = () => {
               {categories.map((cat) => (
                 <option key={cat._id} value={cat._id}>
                   {cat.nom}
+                </option>
+              ))}
+            </TextField>
+            <TextField
+              fullWidth
+              select
+              SelectProps={{ native: true }}
+              label="Sous-famille *"
+              id="subcategory-select"
+              aria-label="Sous-famille du produit"
+              aria-describedby={formErrors.sousCategorieId ? "sousCategorieId-error" : undefined}
+              value={form.sousCategorieId}
+              onChange={(e) => {
+                setForm({ ...form, sousCategorieId: e.target.value });
+                validateField("sousCategorieId", e.target.value);
+              }}
+              error={!!formErrors.sousCategorieId}
+              helperText={formErrors.sousCategorieId || "Sélectionnez une sous-famille"}
+              variant="outlined"
+              size="medium"
+              sx={{ minHeight: isMobile ? 56 : "auto", mt: 2 }}
+            >
+              <option value="">-- Sélectionner une sous-famille --</option>
+              {subCategories.map((subCat) => (
+                <option key={subCat._id} value={subCat._id}>
+                  {subCat.nom}
                 </option>
               ))}
             </TextField>
@@ -1242,6 +1292,25 @@ const ProductManager = () => {
                 {categories.map((cat) => (
                   <option key={cat._id} value={cat._id}>
                     {cat.nom}
+                  </option>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                SelectProps={{ native: true }}
+                label="Sous-famille"
+                value={editForm.sousCategorieId}
+                onChange={(e) => setEditForm({ ...editForm, sousCategorieId: e.target.value })}
+                fullWidth
+                margin="normal"
+                required
+              >
+                <option value="">Sélectionner une sous-famille</option>
+                {subCategories.map((subCat) => (
+                  <option key={subCat._id} value={subCat._id}>
+                    {subCat.nom}
                   </option>
                 ))}
               </TextField>

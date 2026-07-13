@@ -12,6 +12,8 @@ const createPaymentIntent = require("./routes/api/create-payment-intent");
 const commercialClients = require("./routes/api/commercialClients");
 const orders = require("./routes/api/orders");
 const notifications = require("./routes/api/notifications");
+const pushRoutes = require("./routes/api/push");
+const subcategories = require("./routes/api/SubCategories");
 const app = express();
 
 // Pour analyser le corps des requêtes HTTP (JSON)
@@ -93,10 +95,12 @@ app.use(async (req, res, next) => {
 // Routes
 app.use("/users", users);
 app.use("/categories", categories);
+app.use("/subcategories", subcategories);
 app.use("/produits", products);
 app.use("/commercial-clients", commercialClients);
 app.use("/orders", orders);
 app.use("/notifications", notifications);
+app.use("/push", pushRoutes);
 app.use("/stripe", createPaymentIntent);
 
 // Global error handler middleware

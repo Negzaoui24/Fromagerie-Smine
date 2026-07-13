@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const Categorie = require("../../models/Categorie");
+const Produit = require("../../models/Product");
 const multer = require("multer");
 const { uploadBuffer, destroyImage } = require("../../utils/cloudinary");
 
@@ -171,8 +172,15 @@ router.put("/update/:id", upload.single("image"), async (req, res) => {
 
 router.delete("/delete/:id", async (req, res) => {
   try {
-    const category = await Categorie.findByIdAndDelete(req.params.id);
+    const productCount = await Produit.countDocuments({ categorie: req.params.id });
+    if (productCount > 0) {
+      return res.status(400).json({
+        status: "notok",
+        msg: "Impossible de supprimer la catégorie : des produits y sont encore rattachés"
+      });
+    }
 
+    const category = await Categorie.findById(req.params.id);
     if (!category) {
       return res.status(404).json({ status: "notok", msg: "Categorie non trouvee" });
     }
@@ -180,6 +188,8 @@ router.delete("/delete/:id", async (req, res) => {
     if (category.image) {
       await destroyImage(category.image);
     }
+
+    await category.deleteOne();
 
     res.status(200).json({ status: "ok", msg: "Categorie supprimee avec succes" });
   } catch (err) {

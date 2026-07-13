@@ -40,7 +40,16 @@ const deleteLocalImage = async (imageUrl) => {
 };
 
 router.post("/add", upload.array("images", 10), async (req, res) => {
-  const { name, description = "", quantite, prixAchat, prixVente, unite, categorie } = req.body;
+  const {
+    name,
+    description = "",
+    quantite,
+    prixAchat,
+    prixVente,
+    unite,
+    categorie,
+    sousCategorie
+  } = req.body;
   const uniteGros = typeof req.body.uniteGros === "string" && req.body.uniteGros.trim() ? req.body.uniteGros.trim() : null;
   const venteParGros = parseBoolean(req.body.venteParGros) || false;
   const prixVenteGros = req.body.prixVenteGros !== undefined && req.body.prixVenteGros !== ""
@@ -64,6 +73,14 @@ router.post("/add", upload.array("images", 10), async (req, res) => {
     return res.status(400).json({
       status: "notok",
       msg: "Le nom du produit est requis"
+    });
+  }
+
+  if (!sousCategorie || !sousCategorie.trim()) {
+    console.log("Validation failed - missing sousCategorie");
+    return res.status(400).json({
+      status: "notok",
+      msg: "La sous-famille du produit est requise"
     });
   }
 
@@ -94,6 +111,25 @@ router.post("/add", upload.array("images", 10), async (req, res) => {
         msg: "Catégorie sélectionnée n'existe pas"
       });
     }
+  }
+
+  const sousCategorieValue = sousCategorie && sousCategorie.trim() ? sousCategorie : null;
+  if (!sousCategorieValue || !require('mongoose').Types.ObjectId.isValid(sousCategorieValue)) {
+    console.log("Invalid sousCategorie ObjectId");
+    return res.status(400).json({
+      status: "notok",
+      msg: "ID de sous-famille invalide"
+    });
+  }
+
+  const SubCategorie = require("../../models/SubCategorie");
+  const sousCategorieExists = await SubCategorie.findById(sousCategorieValue);
+  if (!sousCategorieExists) {
+    console.log("SousCategorie not found in database");
+    return res.status(400).json({
+      status: "notok",
+      msg: "Sous-famille sélectionnée n'existe pas"
+    });
   }
 
   const cloudinaryReady =
@@ -139,6 +175,7 @@ router.post("/add", upload.array("images", 10), async (req, res) => {
       uniteGros: uniteGros || null,
       unite: uniteValue,
       categorie: categorieValue,
+      sousCategorie: sousCategorieValue,
       images
     });
 
@@ -165,7 +202,9 @@ router.post("/add", upload.array("images", 10), async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const produits = await Produit.find().populate("categorie", "nom");
+    const produits = await Produit.find()
+      .populate("categorie", "nom")
+      .populate("sousCategorie", "nom");
     res.status(200).json({
       status: "ok",
       produits
@@ -177,13 +216,16 @@ router.get("/", async (req, res) => {
 
 router.get("/allProducts", async (req, res) => {
   try {
-    const produits = await Produit.find().populate("categorie", "nom");
+    const produits = await Produit.find()
+      .populate("categorie", "nom")
+      .populate("sousCategorie", "nom");
     const data = produits.map((p) => ({
       libelle: p.name,
       description: p.description || "",
       quantite: p.quantite,
       unite: p.unite,
-      categorie: p.categorie ? p.categorie.nom : null
+      categorie: p.categorie ? p.categorie.nom : null,
+      sousCategorie: p.sousCategorie ? p.sousCategorie.nom : null
     }));
     res.status(200).json(data);
   } catch (err) {
@@ -198,7 +240,7 @@ router.put("/update/:id", upload.array("images", 10), async (req, res) => {
     process.env.CLOUDINARY_API_SECRET;
 
   try {
-    const { name, description, quantite, prixAchat, prixVente, unite, categorie } = req.body;
+    const { name, description, quantite, prixAchat, prixVente, unite, categorie, sousCategorie } = req.body;
     const venteParGros = parseBoolean(req.body.venteParGros);
     const prixVenteGros =
       req.body.prixVenteGros !== undefined && req.body.prixVenteGros !== ""
@@ -225,6 +267,7 @@ router.put("/update/:id", upload.array("images", 10), async (req, res) => {
       ...(unite !== undefined && { unite }),
       ...(uniteGros !== undefined && { uniteGros }),
       ...(categorie !== undefined && { categorie }),
+      ...(sousCategorie !== undefined && { sousCategorie }),
       ...(venteParGros !== undefined && { venteParGros }),
       ...(prixVenteGros !== undefined && { prixVenteGros: venteParGros ? prixVenteGros : null })
     };

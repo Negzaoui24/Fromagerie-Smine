@@ -23,6 +23,13 @@ const ProduitSchema = new mongoose.Schema({
     default: null
   },
 
+  sousCategorie: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SubCategorie',
+    required: false,
+    default: null
+  },
+
   images: [{ type: String }]
 }, { timestamps: true });
 

@@ -16,6 +16,7 @@ function GrosPage() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedCat, setSelectedCat] = useState("");
+  const [selectedSubCat, setSelectedSubCat] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cartItems, setCartItems] = useState([]);
@@ -216,6 +217,19 @@ function GrosPage() {
     );
   };
 
+  const setCartQuantity = (productId, rawValue) => {
+    const quantity = Number(rawValue);
+    if (!rawValue || Number.isNaN(quantity) || quantity < 1) {
+      return;
+    }
+
+    setCartItems((current) =>
+      current.map((item) =>
+        item.productId === productId ? { ...item, quantity: Math.floor(quantity) } : item
+      )
+    );
+  };
+
   const removeCartItem = (productId) => {
     setCartItems((current) => current.filter((item) => item.productId !== productId));
   };
@@ -362,9 +376,29 @@ function GrosPage() {
     [products]
   );
 
-  const filteredProducts = selectedCat
-    ? wholesaleProducts.filter((product) => product.categorie?._id === selectedCat)
-    : wholesaleProducts;
+  const subcategoriesForSelectedCategory = useMemo(() => {
+    if (!selectedCat) return [];
+    const map = new Map();
+    wholesaleProducts
+      .filter((product) => product.categorie?._id === selectedCat && product.sousCategorie)
+      .forEach((product) => {
+        const subCat = product.sousCategorie;
+        if (subCat && subCat._id) {
+          map.set(subCat._id, subCat);
+        }
+      });
+    return Array.from(map.values()).sort((a, b) => a.nom.localeCompare(b.nom));
+  }, [selectedCat, wholesaleProducts]);
+
+  const filteredProducts = useMemo(() => {
+    let result = selectedCat
+      ? wholesaleProducts.filter((product) => product.categorie?._id === selectedCat)
+      : wholesaleProducts;
+    if (selectedSubCat) {
+      result = result.filter((product) => product.sousCategorie?._id === selectedSubCat);
+    }
+    return result;
+  }, [selectedCat, selectedSubCat, wholesaleProducts]);
 
   const wholesaleCategories = useMemo(
     () =>
@@ -375,6 +409,9 @@ function GrosPage() {
   );
 
   const selectedCategory = wholesaleCategories.find((category) => category._id === selectedCat);
+  const selectedSubCategory = subcategoriesForSelectedCategory.find(
+    (subCat) => subCat._id === selectedSubCat
+  );
 
   const getBulkCountForCategory = (categoryId) =>
     wholesaleProducts.filter((product) => product.categorie?._id === categoryId).length;
@@ -399,7 +436,7 @@ function GrosPage() {
           <p>
             Decouvrez notre selection exclusive de fromages artisanaux en gros,
             preparees avec soin pour offrir qualite, fraicheur et saveur authentique.
-            qqqqqqqqqqqqqqqq
+            
           </p>
           <button
             className="commercial-btn commercial-welcome-btn"
@@ -442,7 +479,10 @@ function GrosPage() {
           <button
             type="button"
             className={`commercial-filter-pill${selectedCat ? "" : " is-active"}`}
-            onClick={() => setSelectedCat("")}
+            onClick={() => {
+              setSelectedCat("");
+              setSelectedSubCat("");
+            }}
           >
             Toutes
           </button>
@@ -451,7 +491,11 @@ function GrosPage() {
               key={category._id}
               type="button"
               className={`commercial-filter-pill${selectedCat === category._id ? " is-active" : ""}`}
-              onClick={() => setSelectedCat(category._id)}
+              onClick={() => {
+                setSelectedCat(category._id);
+                setSelectedSubCat("");
+                scrollToSection("products");
+              }}
             >
               {category.nom}
             </button>
@@ -466,13 +510,19 @@ function GrosPage() {
               <article
                 key={category._id}
                 className={`commercial-category-card${selectedCat === category._id ? " is-selected" : ""}`}
-                onClick={() => setSelectedCat(category._id)}
+                onClick={() => {
+                  setSelectedCat(category._id);
+                  setSelectedSubCat("");
+                  scrollToSection("products");
+                }}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
                     setSelectedCat(category._id);
+                    setSelectedSubCat("");
+                    scrollToSection("products");
                   }
                 }}
               >
@@ -503,11 +553,36 @@ function GrosPage() {
       <section id="products" className="commercial-section commercial-products-section">
         <div className="commercial-section-head">
           <p className="commercial-section-kicker">Articles en gros</p>
-          <h2>{selectedCategory ? `Produits - ${selectedCategory.nom}` : "Tous les articles en gros"}</h2>
+          <h2>
+            {selectedCategory
+              ? `Produits - ${selectedCategory.nom}${selectedSubCategory ? ` / ${selectedSubCategory.nom}` : ""}`
+              : "Tous les articles en gros"}
+          </h2>
           <p>
             Découvrez les prix par groupe, les stocks disponibles et les unités pour chaque référence.
           </p>
         </div>
+        {selectedCat && subcategoriesForSelectedCategory.length > 0 && (
+          <div className="commercial-filter-bar commercial-subcategory-bar">
+            <button
+              type="button"
+              className={`commercial-filter-pill${selectedSubCat ? "" : " is-active"}`}
+              onClick={() => setSelectedSubCat("")}
+            >
+              Toutes les sous-familles
+            </button>
+            {subcategoriesForSelectedCategory.map((subCat) => (
+              <button
+                key={subCat._id}
+                type="button"
+                className={`commercial-filter-pill${selectedSubCat === subCat._id ? " is-active" : ""}`}
+                onClick={() => setSelectedSubCat(subCat._id)}
+              >
+                {subCat.nom}
+              </button>
+            ))}
+          </div>
+        )}
 
         {error && <div className="commercial-alert">{error}</div>}
 
@@ -546,13 +621,48 @@ function GrosPage() {
                     {product.description && (
                       <p className="commercial-product-description">{product.description}</p>
                     )}
-                  <button
-                    type="button"
-                    className="commercial-btn commercial-btn-secondary"
-                    onClick={() => addToCart(product)}
-                  >
-                    Ajouter au panier
-                  </button>
+                  <div className="commercial-product-add-area">
+                    {(() => {
+                      const inCart = cartItems.find((it) => it.productId === product._id);
+                      if (!inCart) {
+                        return (
+                          <button
+                            type="button"
+                            className="commercial-btn commercial-btn-secondary"
+                            onClick={() => addToCart(product)}
+                          >
+                            Ajouter au panier
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <div className="commercial-product-add-controls">
+                          <button
+                            type="button"
+                            className="commercial-btn commercial-btn-active"
+                            disabled
+                          >
+                            Dans le panier
+                          </button>
+
+                          <div className="commercial-quantity-control" style={{ marginLeft: 12 }}>
+                            <button type="button" onClick={() => updateCartQuantity(product._id, -1)} aria-label="Réduire quantité">-</button>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              className="commercial-quantity-input"
+                              value={inCart.quantity}
+                              onChange={(e) => setCartQuantity(product._id, e.target.value)}
+                              aria-label={`Quantité pour ${product.name}`}
+                            />
+                            <button type="button" onClick={() => updateCartQuantity(product._id, 1)} aria-label="Augmenter quantité">+</button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               </article>
             ))}
@@ -591,10 +701,20 @@ function GrosPage() {
                       </p>
                     </div>
                     <div className="commercial-cart-item-actions">
-                      <button type="button" onClick={() => updateCartQuantity(item.productId, -1)} aria-label={`Réduire ${item.name}`}>
+                              <button type="button" onClick={() => updateCartQuantity(item.productId, -1)} aria-label={`Réduire ${item.name}`}>
                         -
                       </button>
-                      <span>{item.quantity}</span>
+                      <div className="commercial-quantity-control">
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          className="commercial-quantity-input"
+                          value={item.quantity}
+                          onChange={(event) => setCartQuantity(item.productId, event.target.value)}
+                          aria-label={`Quantité pour ${item.name}`}
+                        />
+                      </div>
                       <button type="button" onClick={() => updateCartQuantity(item.productId, 1)} aria-label={`Augmenter ${item.name}`}>
                         +
                       </button>
@@ -677,18 +797,20 @@ function GrosPage() {
               </label>
             </div>
 
-            <div className="commercial-cart-actions">
-              <button
-                type="button"
-                className="commercial-btn"
-                onClick={handleCheckout}
-                disabled={!canValidateOrder}
-              >
-                {canValidateOrder ? "Valider la commande" : "Informations manquantes"}
-              </button>
-              {checkoutRequirements.length > 0 && (
-                <p className="commercial-cta-hint">{checkoutRequirements[0]}</p>
-              )}
+            <div className="commercial-cart-actions-wrapper">
+              <div className="commercial-cart-actions">
+                <button
+                  type="button"
+                  className="commercial-btn"
+                  onClick={handleCheckout}
+                  disabled={!canValidateOrder}
+                >
+                  {canValidateOrder ? "Valider la commande" : "Informations manquantes"}
+                </button>
+                {checkoutRequirements.length > 0 && (
+                  <p className="commercial-cta-hint">{checkoutRequirements[0]}</p>
+                )}
+              </div>
             </div>
 
             {cartMessage && (

@@ -4,7 +4,8 @@ const config = require("config");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const User = require("../../models/User");
-const authMiddleware=require("../../middleware/authMiddleware")
+const Notification = require("../../models/Notification");
+const authMiddleware = require("../../middleware/authMiddleware")
 const SUPER_ADMIN_EMAILS = [
     "oussama.negzaoui24@gmail.com"
     
@@ -115,7 +116,28 @@ const { username, email, password, role, phone, address, fiscalId } = req.body;
                     // Save the user to the database
                     newUser
                         .save()
-                        .then((user) => {
+                        .then(async (user) => {
+                            if (user.accountStatus !== "approved") {
+                                try {
+                                    const admins = await User.find({ role: { $in: ["admin", "super_admin"] } }).select("_id username email");
+                                    const notifications = admins.map((admin) => ({
+                                        recipient: admin._id,
+                                        title: "Nouvelle demande de création de compte client",
+                                        message: `Un nouveau client (${user.username}) a demandé un compte. Veuillez l'approuver.`,
+                                        data: {
+                                            userId: user._id,
+                                            username: user.username,
+                                            email: user.email,
+                                            accountStatus: user.accountStatus
+                                        }
+                                    }));
+                                    if (notifications.length > 0) {
+                                        await Notification.insertMany(notifications);
+                                    }
+                                } catch (notificationError) {
+                                    console.error("Erreur creation notification admin:", notificationError);
+                                }
+                            }
                             if (user.accountStatus === "approved") {
                                 jwt.sign({ id: user.id, name: user.username, role: user.role },
                                     JWT_SECRET, { expiresIn: TOKEN_EXPIRE },
