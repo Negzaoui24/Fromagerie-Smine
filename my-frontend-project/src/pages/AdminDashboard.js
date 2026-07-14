@@ -1085,19 +1085,27 @@ function AdminDashboard() {
               : "Utilisez les boutons ci-dessous pour gerer les categories, les produits, creer un admin ou modifier la video de la page client."}
           </p>
           {isCommercialUser && (
-            <div className="admin-hero-actions">
-              <button
-                type="button"
-                className="admin-primary-button"
-                onClick={() => setActivePanel("orders")}
-              >
-                Consulter mes commandes
-              </button>
-              <p className="admin-hint">
-                Commandes passées avec le commercial {currentUserName}.
-              </p>
-            </div>
-          )}
+  <div className="admin-hero-actions">
+    <button
+      type="button"
+      className="admin-primary-button"
+      onClick={() => setActivePanel("orders")}
+    >
+      Consulter mes commandes
+    </button>
+    <button
+      type="button"
+      className="admin-secondary-button"
+      onClick={handleEnablePushNotifications}
+      disabled={pushPending || pushEnabled}
+    >
+      {pushEnabled ? "Notifications push activées" : pushPending ? "Activation..." : "Activer notifications push"}
+    </button>
+    <p className="admin-hint">
+      Commandes passées avec le commercial {currentUserName}.
+    </p>
+  </div>
+)}
           {!isCommercialUser && (
             <div className="admin-hero-actions">
               <button
