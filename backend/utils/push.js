@@ -1,6 +1,5 @@
-const fs = require("fs");
-const path = require("path");
 const webpush = require("web-push");
+const PushSubscription = require("../models/PushSubscription");
 
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
@@ -14,25 +13,24 @@ if (vapidPublicKey && vapidPrivateKey && vapidEmail) {
   webpush.setVapidDetails(`mailto:${vapidEmail}`, vapidPublicKey, vapidPrivateKey);
 }
 
-const subscriptionFile = path.resolve(__dirname, "..", "push-subscription.json");
-
 const saveSubscription = async (subscription) => {
   try {
-    fs.writeFileSync(subscriptionFile, JSON.stringify(subscription, null, 2), "utf-8");
-    console.log("[push] Abonnement admin enregistré dans push-subscription.json");
+    await PushSubscription.findOneAndUpdate(
+      { endpoint: subscription.endpoint },
+      subscription,
+      { upsert: true, new: true }
+    );
+    console.log("[push] Abonnement admin enregistré en base");
   } catch (error) {
     console.error("[push] Impossible d'enregistrer l'abonnement admin:", error);
     throw error;
   }
 };
 
-const loadSubscription = () => {
+const loadSubscription = async () => {
   try {
-    if (!fs.existsSync(subscriptionFile)) {
-      return null;
-    }
-    const raw = fs.readFileSync(subscriptionFile, "utf-8");
-    return JSON.parse(raw);
+    const sub = await PushSubscription.findOne().sort({ createdAt: -1 });
+    return sub;
   } catch (error) {
     console.error("[push] Impossible de lire l'abonnement admin:", error);
     return null;
@@ -45,7 +43,7 @@ const notifyAdminPush = async (order) => {
     return;
   }
 
-  const subscription = loadSubscription();
+  const subscription = await loadSubscription();
   if (!subscription) {
     console.warn("[push] Aucun abonnement admin disponible pour envoyer la notification.");
     return;
@@ -61,13 +59,12 @@ const notifyAdminPush = async (order) => {
     }
   });
 
-  webpush.sendNotification(subscription, payload)
-    .then(() => {
-      console.log(`[push] Notification envoyée à l'admin pour la commande ${order._id}`);
-    })
-    .catch((err) => {
-      console.error("[push] Erreur envoi notification admin:", err);
-    });
+  try {
+    await webpush.sendNotification(subscription, payload);
+    console.log(`[push] Notification envoyée à l'admin pour la commande ${order._id}`);
+  } catch (err) {
+    console.error("[push] Erreur envoi notification admin:", err);
+  }
 };
 
 module.exports = {
