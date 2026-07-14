@@ -568,9 +568,9 @@ function AdminDashboard() {
       setPushEnabled(true);
       setPushStatus("Notifications push activées. Vous recevrez les alertes de nouvelles commandes.");
     } catch (error) {
-      console.error("Erreur activation push:", error);
-      setPushStatus("Impossible d'activer les notifications push. Vérifiez la console.");
-    } finally {
+    console.error("Erreur activation push:", error);
+    setPushStatus(`Erreur: ${error.message || "Impossible d'activer les notifications push."}`);
+  } finally {
       setPushPending(false);
     }
   };
