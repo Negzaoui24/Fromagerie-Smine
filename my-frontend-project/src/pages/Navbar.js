@@ -237,16 +237,8 @@ function Navbar({ space }) {
           >
             <CartIcon />
           </button>
-          <button type="button" className="navbar-space-link" onClick={goToGrosOrders}>
-            Mes demandes
-          </button>
-          <button
-            type="button"
-            className="navbar-space-link navbar-space-link-secondary"
-            onClick={goToLogin}
-          >
-            Login
-          </button>
+
+          {/* Icônes réseaux sociaux : toujours visibles (desktop et mobile) */}
           <div className="social-links-group">
             {socialLinks.map((link) => (
               <button
@@ -261,6 +253,55 @@ function Navbar({ space }) {
               </button>
             ))}
           </div>
+
+          {/* Menu 3 points : toujours visible (desktop et mobile), regroupe Mes demandes / Modifier mes données / Logout */}
+          <button
+            className="navbar-menu-button gros-menu-button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            type="button"
+            aria-label="Ouvrir le menu"
+            aria-expanded={menuOpen}
+          >
+            <span className="hamburger-icon">{menuOpen ? "✕" : "⋮"}</span>
+          </button>
+
+          {menuOpen && (
+            <div className="navbar-dropdown gros-navbar-dropdown">
+              <button
+                className="nav-link"
+                onClick={() => handleMenuClick(goToGrosOrders)}
+                type="button"
+              >
+                Mes demandes
+              </button>
+              {isAuthenticated ? (
+                <>
+                  <button
+                    className="nav-link"
+                    onClick={() => handleMenuClick(() => navigate("/profile"))}
+                    type="button"
+                  >
+                    Modifier mes données
+                  </button>
+                  <button
+                    className="nav-link logout-link"
+                    onClick={() => handleMenuClick(handleLogout)}
+                    type="button"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="nav-link"
+                  onClick={() => handleMenuClick(goToLogin)}
+                  type="button"
+                >
+                  Login
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </header>
     );

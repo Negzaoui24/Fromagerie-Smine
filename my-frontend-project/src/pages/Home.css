@@ -390,7 +390,22 @@ body {
 }
 
 .gros-navbar-actions .social-links-group {
+  order: 2;
+}
+
+.gros-menu-button {
   order: 3;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  line-height: 1;
 }
 
 .welcome-text h2 {
@@ -856,6 +871,12 @@ footer {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
     background: #fff;
     z-index: 50;
+  }
+
+  .navbar-dropdown-socials.social-links-group {
+    display: flex;
+    justify-content: center;
+    padding: 0.8rem 0;
   }
 
   .nav-link {

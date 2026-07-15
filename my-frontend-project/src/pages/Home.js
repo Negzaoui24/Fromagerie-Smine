@@ -130,8 +130,7 @@ function Home() {
           <h2>Bienvenue a</h2>
           <h1>Fromagerie Smine</h1>
           <p>
-            Decouvrez une selection de fromages artisanaux tunisiens, prepares
-            avec soin pour offrir qualite, fraicheur et saveur authentique.
+            Explorez une large gamme de fromages artisanaux et pressés, tunisiens comme importés, sélectionnés avec soin pour vous garantir qualité, fraîcheur et goût authentique.
           </p>
           <button
             className="btn"
@@ -263,8 +262,7 @@ function Home() {
             <span className="section-kicker">Contact</span>
             <h2>Contactez-nous</h2>
             <p className="section-copy">
-              Retrouvez-nous a Nabeul ou laissez-nous un message pour toute demande sur nos
-              produits artisanaux.
+              Retrouvez-nous a Nabeul ou laissez-nous un message.
             </p>
           </div>
 

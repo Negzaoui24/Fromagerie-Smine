@@ -28,6 +28,63 @@ body {
   color: var(--text);
 }
 
+.commercial-quick-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 0.85rem 1.2rem;
+  background: rgba(255, 250, 245, 0.97);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(139, 94, 52, 0.16);
+  box-shadow: 0 -8px 24px rgba(50, 35, 18, 0.08);
+  transform: translateY(100%);
+  transition: transform 0.32s ease;
+}
+
+.commercial-quick-bar.is-visible {
+  transform: translateY(0);
+}
+
+.commercial-quick-bar-btn {
+  position: relative;
+  flex: 1;
+  max-width: 220px;
+  border: none;
+  border-radius: 999px;
+  background: #8b5e34;
+  color: #fff;
+  font-weight: 700;
+  padding: 0.7rem 1.2rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.commercial-quick-bar-btn:hover {
+  background: #6c4b2d;
+}
+
+.commercial-quick-bar-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
 .commercial-hero-video {
   position: relative;
   width: 100%;
@@ -58,7 +115,7 @@ body {
 .commercial-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 252, 245, 0.95);
+  background: rgba(255, 252, 245, 0.35);
   z-index: 2;
 }
 
@@ -627,6 +684,16 @@ body {
   padding: 0;
   display: grid;
   gap: 0.55rem;
+}
+
+.commercial-orders-toggle-wrapper {
+  margin: 0 0 1.5rem;
+}
+
+.commercial-order-detail-btn {
+  margin-top: 0.9rem;
+  font-size: 0.9rem;
+  padding: 0.5rem 1.1rem;
 }
 
 .commercial-order-items li {

@@ -33,6 +33,9 @@ function GrosPage() {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState("");
+  const [showOrders, setShowOrders] = useState(false);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [showQuickBar, setShowQuickBar] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem("token")));
   const [showPriceGros, setShowPriceGros] = useState(() => {
     try {
@@ -314,6 +317,22 @@ function GrosPage() {
   );
 
   useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollingDown = currentScrollY > lastScrollY;
+      const pastThreshold = currentScrollY > 120;
+
+      setShowQuickBar(scrollingDown && pastThreshold);
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
     const fetchCatalog = async () => {
       setLoading(true);
       setError("");
@@ -341,9 +360,15 @@ function GrosPage() {
     fetchCommercialOptions();
   }, [fetchCommercialOptions]);
 
-  useEffect(() => {
-    fetchGrosOrders();
-  }, [fetchGrosOrders]);
+  const handleToggleOrders = () => {
+    setShowOrders((current) => {
+      const next = !current;
+      if (next) {
+        fetchGrosOrders();
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (commercialOptions.length && !selectedCommercialId) {
@@ -418,6 +443,26 @@ function GrosPage() {
 
   return (
     <main className="commercial-page">
+      <div className={`commercial-quick-bar ${showQuickBar ? "is-visible" : ""}`}>
+        <button
+          type="button"
+          className="commercial-quick-bar-btn"
+          onClick={() => scrollToSection("cart")}
+        >
+          Panier
+          {cartItems.length > 0 && (
+            <span className="commercial-quick-bar-badge">{cartItems.length}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          className="commercial-quick-bar-btn"
+          onClick={() => scrollToSection("orders")}
+        >
+          Mes demandes
+        </button>
+      </div>
+
       <section className="commercial-hero-video">
         {clientHeroMedia?.kind === "video" ? (
           <video autoPlay muted loop playsInline className="commercial-bg-video" aria-label="Video de presentation">
@@ -469,10 +514,7 @@ function GrosPage() {
         <div className="commercial-section-head">
           <p className="commercial-section-kicker">Nos catégories</p>
           <h2>Choisissez la famille de produits qui vous intéresse</h2>
-          <p>
-            Toutes les catégories listées ici conservent une sélection d'articles disponibles à la vente
-            en gros, avec leurs prix par groupe.
-          </p>
+          
         </div>
 
         <div className="commercial-filter-bar">
@@ -558,9 +600,7 @@ function GrosPage() {
               ? `Produits - ${selectedCategory.nom}${selectedSubCategory ? ` / ${selectedSubCategory.nom}` : ""}`
               : "Tous les articles en gros"}
           </h2>
-          <p>
-            Découvrez les prix par groupe, les stocks disponibles et les unités pour chaque référence.
-          </p>
+          
         </div>
         {selectedCat && subcategoriesForSelectedCategory.length > 0 && (
           <div className="commercial-filter-bar commercial-subcategory-bar">
@@ -732,7 +772,6 @@ function GrosPage() {
             <div className="commercial-cart-summary">
               <p>{cartSummary.quantity} article(s) dans le panier</p>
               <strong>{cartSummary.total.toFixed(2)} DT</strong>
-              <p className="commercial-cart-hint">Prix calculé selon la quantité et l’unité de vente. Ajustez vos quantités avant validation.</p>
             </div>
 
             <button
@@ -790,7 +829,7 @@ function GrosPage() {
                   <option value="">Choisissez un commercial</option>
                   {commercialOptions.map((commercial) => (
                     <option key={commercial._id} value={commercial._id}>
-                      {commercial.username} ({commercial.email})
+                      {commercial.username} 
                     </option>
                   ))}
                 </select>
@@ -851,50 +890,76 @@ function GrosPage() {
 
         {ordersError && <div className="commercial-alert">{ordersError}</div>}
         {(isGrosClient || userRole === "commercial" || userRole === "admin" || userRole === "super_admin") ? (
-          ordersLoading ? (
-            <div className="commercial-empty-state">Chargement des commandes...</div>
-          ) : orders.length === 0 ? (
-            <div className="commercial-empty-state">
-              Aucune commande enregistrée pour le moment. Validez une demande depuis le panier.
+          <>
+            <div className="commercial-orders-toggle-wrapper">
+              <button
+                type="button"
+                className="commercial-btn commercial-btn-secondary"
+                onClick={handleToggleOrders}
+              >
+                {showOrders ? "Masquer mes commandes" : "Afficher mes commandes"}
+              </button>
             </div>
-          ) : (
-            <div className="commercial-order-grid">
-              {orders.map((order) => {
-                const orderCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
-                const orderTotal = order.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
-                return (
-                  <article key={order._id} className="commercial-order-card">
-                    <div className="commercial-order-meta">
-                      <h3>{order.customerName || order.customerEmail || "Commande"}</h3>
-                      <span className={`commercial-order-status commercial-order-status-${order.status || "pending"}`}>
-                        {orderStatusLabels[order.status] || orderStatusLabels.pending}
-                      </span>
-                    </div>
-                    <p className="commercial-order-detail">
-                      {order.customerEmail} · {order.customerPhone}
-                    </p>
-                    <p className="commercial-order-detail">
-                      {order.customerLocation ? `${order.customerLocation} · ` : ""}{orderCount} article(s) · {orderTotal.toFixed(2)} DT
-                    </p>
-                    <p className="commercial-order-detail">
-                      Commandée le {new Date(order.createdAt).toLocaleDateString("fr-FR", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric"
-                      })}
-                    </p>
-                    <ul className="commercial-order-items">
-                      {order.items.map((item) => (
-                        <li key={`${order._id}-${item.productId}`}>
-                          {item.quantity}× {item.name} ({item.price} DT/{item.unit})
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                );
-              })}
-            </div>
-          )
+
+            {showOrders && (
+              ordersLoading ? (
+                <div className="commercial-empty-state">Chargement des commandes...</div>
+              ) : orders.length === 0 ? (
+                <div className="commercial-empty-state">
+                  Aucune commande enregistrée pour le moment. Validez une demande depuis le panier.
+                </div>
+              ) : (
+                <div className="commercial-order-grid">
+                  {orders.map((order) => {
+                    const orderCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+                    const orderTotal = order.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+                    const isExpanded = expandedOrderId === order._id;
+                    return (
+                      <article key={order._id} className="commercial-order-card">
+                        <div className="commercial-order-meta">
+                          <h3>{order.customerName || order.customerEmail || "Commande"}</h3>
+                          <span className={`commercial-order-status commercial-order-status-${order.status || "pending"}`}>
+                            {orderStatusLabels[order.status] || orderStatusLabels.pending}
+                          </span>
+                        </div>
+                        <p className="commercial-order-detail">
+                          {order.customerEmail} · {order.customerPhone}
+                        </p>
+                        <p className="commercial-order-detail">
+                          {order.customerLocation ? `${order.customerLocation} · ` : ""}{orderCount} article(s) · {orderTotal.toFixed(2)} DT
+                        </p>
+                        <p className="commercial-order-detail">
+                          Commandée le {new Date(order.createdAt).toLocaleDateString("fr-FR", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric"
+                          })}
+                        </p>
+
+                        <button
+                          type="button"
+                          className="commercial-btn commercial-btn-secondary commercial-order-detail-btn"
+                          onClick={() => setExpandedOrderId(isExpanded ? null : order._id)}
+                        >
+                          {isExpanded ? "Masquer le détail" : "Détail"}
+                        </button>
+
+                        {isExpanded && (
+                          <ul className="commercial-order-items">
+                            {order.items.map((item) => (
+                              <li key={`${order._id}-${item.productId}`}>
+                                {item.quantity}× {item.name} ({item.price} DT/{item.unit})
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              )
+            )}
+          </>
         ) : (
           <div className="commercial-alert commercial-alert-inline">
             <p>Connectez-vous pour consulter vos demandes en gros.</p>
@@ -915,6 +980,3 @@ function GrosPage() {
 }
 
 export default GrosPage;
-
-
-
