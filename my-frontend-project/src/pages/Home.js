@@ -140,21 +140,12 @@ function Home() {
               productsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
           >
-            Decouvrir nos produits
+            Decouvrir notre catalogue
           </button>
         </div>
       </section>
 
-      <section className="content-section intro-section">
-        <div className="section-heading">
-          <span className="section-kicker">Notre selection</span>
-          <h2>Des produits artisanaux pour tous les gouts</h2>
-        </div>
-        <p className="section-copy">
-          {message ||
-            "Parcourez nos categories et retrouvez rapidement les produits qui correspondent a vos besoins."}
-        </p>
-      </section>
+     
 
       <section className="content-section products-section">
         <div className="section-heading">

@@ -1108,13 +1108,7 @@ function AdminDashboard() {
 )}
           {!isCommercialUser && (
             <div className="admin-hero-actions">
-              <button
-                type="button"
-                className="admin-primary-button"
-                onClick={() => setActivePanel("subcategories")}
-              >
-                Créer une sous-famille
-              </button>
+             
               <button
                 type="button"
                 className="admin-secondary-button"

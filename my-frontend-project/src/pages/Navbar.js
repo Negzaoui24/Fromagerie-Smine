@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api";
 import "./Home.css";
@@ -36,12 +36,27 @@ function SocialIcon({ type }) {
   );
 }
 
+function MenuIcon({ open }) {
+  if (open) {
+    return <span className="hamburger-icon">✕</span>;
+  }
+
+  return (
+    <span className="hamburger-lines" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </span>
+  );
+}
+
 function Navbar({ space }) {
   const navigate = useNavigate();
   const location = useLocation();
   const name = localStorage.getItem("name");
   const token = localStorage.getItem("token");
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuContainerRef = useRef(null);
   const [notifications, setNotifications] = useState([]);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -101,6 +116,30 @@ function Navbar({ space }) {
       fetchNotifications();
     }
   }, [token, isAdminSpace, fetchNotifications]);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return undefined;
+    }
+
+    const closeMenu = () => setMenuOpen(false);
+
+    const handleClickOutside = (event) => {
+      if (menuContainerRef.current && !menuContainerRef.current.contains(event.target)) {
+        closeMenu();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    window.addEventListener("scroll", closeMenu, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      window.removeEventListener("scroll", closeMenu, true);
+    };
+  }, [menuOpen]);
 
   const handleNotificationClick = async (notification) => {
     await markNotificationRead(notification._id);
@@ -227,7 +266,7 @@ function Navbar({ space }) {
           />
           <span>{brandLabel}</span>
         </button>
-        <div className="gros-navbar-actions">
+        <div className="gros-navbar-actions" ref={menuContainerRef}>
           <button
             type="button"
             className="social-icon-button"
@@ -262,7 +301,7 @@ function Navbar({ space }) {
             aria-label="Ouvrir le menu"
             aria-expanded={menuOpen}
           >
-            <span className="hamburger-icon">{menuOpen ? "✕" : "⋮"}</span>
+            <MenuIcon open={menuOpen} />
           </button>
 
           {menuOpen && (
@@ -318,7 +357,7 @@ function Navbar({ space }) {
         <span>{brandLabel}</span>
       </button>
 
-      <div className="navbar-actions">
+      <div className="navbar-actions" ref={menuContainerRef}>
         <span className="navbar-greeting">
           {isAdminSpace
             ? `Bienvenue, ${name || "admin"} !`

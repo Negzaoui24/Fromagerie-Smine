@@ -5,6 +5,7 @@ const User = require("../../models/User");
 const Notification = require("../../models/Notification");
 const { sendWhatsAppMessage } = require("../../utils/whatsapp");
 const { notifyAdminPush } = require("../../utils/push");
+const notifyNewOrderTelegram = require("../../utils/notifyTelegram");
 
 const normalizeRole = (role) => String(role || "").toLowerCase();
 const isAdminRole = (role) => ["admin", "super_admin"].includes(normalizeRole(role));
@@ -59,6 +60,7 @@ const buildOrder = async ({
 
   await createOrderNotifications(populatedOrder);
   await notifyAdminPush(populatedOrder);
+  notifyNewOrderTelegram(populatedOrder);
   
   return populatedOrder;
 };
