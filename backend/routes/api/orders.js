@@ -53,9 +53,11 @@ const buildOrder = async ({
 
   const savedOrder = await newOrder.save();
   
-  // Populate après save 
+  // Populate après save
+  // IMPORTANT : "telegramChatId" est inclus ici pour permettre l'envoi
+  // de la notification Telegram au commercial sélectionné.
   const populatedOrder = await Order.findById(savedOrder._id)
-    .populate("commercial", "username email phone")
+    .populate("commercial", "username email phone telegramChatId")
     .populate("createdBy", "username email");
 
   await createOrderNotifications(populatedOrder);

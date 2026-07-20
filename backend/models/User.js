@@ -35,7 +35,12 @@ const UserSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending"
-    }
+    },
+    telegramChatId: {
+  type: String,
+  default: null
+},
+    
   },
   { timestamps: true }
 );
